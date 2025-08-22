@@ -1,68 +1,433 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Caza-bulos ambientales · Juego</title>
-<style>
-  /* ===== Scope del juego ===== */
-  #game-root, #game-root * { box-sizing: border-box; }
-  #game-root {
-    --bg0:#bfe3ff; --bg1:#e9f5ff; --ink:#0b243b; --ink-soft:#254a6a;
-    --panel:rgba(255,255,255,.9); --accent:#0ea5e9; --accent-2:#22c55e; --danger:#ef4444;
-    --shadow:0 6px 24px rgba(0,0,0,.15);
-    position:relative; width:100%; min-height:100vh; overflow:hidden;
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Noto Sans";
-    color:var(--ink); line-height:1.3;
-  }
-  .game-area{position:relative;width:100%;height:100vh;background:radial-gradient(120% 100% at 50% 0%,var(--bg1) 0%,var(--bg0) 50%,#a7d8ff 100%);overflow:hidden;touch-action:none;user-select:none;}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Caza-bulos ambientales · Juego (12 bulos)</title>
+  <style>
+    #game-root, #game-root * { box-sizing: border-box; }
+    #game-root {
+      --bg0: #bfe3ff; --bg1: #e9f5ff; --ink:#0b243b; --ink-soft:#254a6a;
+      --panel: rgba(255,255,255,.9); --accent:#0ea5e9; --accent-2:#22c55e; --danger:#ef4444;
+      --shadow: 0 6px 24px rgba(0,0,0,.15);
+      position: relative; width: 100%; min-height: 100vh; overflow: hidden;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Noto Sans";
+      color: var(--ink); line-height: 1.3;
+    }
+    .game-area{position:relative;width:100%;height:100vh;background:radial-gradient(120% 100% at 50% 0%,var(--bg1) 0%,var(--bg0) 50%,#a7d8ff 100%);overflow:hidden;touch-action:none;user-select:none;}
+    .hud{position:absolute;inset:12px 12px auto 12px;display:flex;gap:8px;align-items:center;z-index:30;background:rgba(255,255,255,.6);backdrop-filter:blur(6px);border-radius:14px;padding:8px 10px;box-shadow:var(--shadow);} 
+    .hud .counter{font-weight:700;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.9);} 
+    .btn{appearance:none;border:0;border-radius:12px;background:var(--accent);color:#fff;padding:8px 12px;font-weight:700;cursor:pointer;transition:transform .05s ease,opacity .2s ease;box-shadow:var(--shadow);} 
+    .btn:active{transform:translateY(1px) scale(0.99);} .btn.secondary{background:var(--accent-2);} .btn.danger{background:var(--danger);} 
 
-  .hud{position:absolute;inset:12px 12px auto 12px;display:flex;gap:8px;align-items:center;z-index:30;background:rgba(255,255,255,.6);backdrop-filter:blur(6px);border-radius:14px;padding:8px 10px;box-shadow:var(--shadow);}
-  .hud .counter{font-weight:700;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.9);}
-  .btn{appearance:none;border:0;border-radius:12px;background:var(--accent);color:#fff;padding:8px 12px;font-weight:700;cursor:pointer;transition:transform .05s ease,opacity .2s ease;box-shadow:var(--shadow);}
-  .btn:active{transform:translateY(1px) scale(0.99);} .btn.secondary{background:var(--accent-2);} .btn.danger{background:var(--danger);}
+    /* Protagonista */
+    .player{position:absolute;width:56px;height:56px;left:50%;top:62%;transform:translate(-50%,-50%);will-change:transform;z-index:10;pointer-events:none;} 
+    .player svg{display:block;width:100%;height:100%;}
+    @keyframes sway{0%,100%{transform:rotate(-6deg);}50%{transform:rotate(6deg);}}
+    .player .arm{transform-origin:36px 16px;animation:sway 1.2s ease-in-out infinite;}
+    .player.face-left svg{transform:scaleX(-1);transform-origin:50% 50%;transform-box:fill-box;}
+    .player.face-right svg{transform:scaleX(1);transform-origin:50% 50%;transform-box:fill-box;}
 
-  /* ===== Protagonista ===== */
-  .player{
-    position:absolute;width:56px;height:56px;
-    /* fallback visible si JS no carga */
-    left:50%; top:62%; transform:translate(-50%,-50%);
-    will-change:transform; z-index:10; pointer-events:none;
-  }
-  .player svg{display:block;width:100%;height:100%;}
-  @keyframes sway{0%,100%{transform:rotate(-6deg);}50%{transform:rotate(6deg);}}
-  .player .arm{transform-origin:36px 16px;animation:sway 1.2s ease-in-out infinite;}
+    /* Mariposas */
+    .butterfly{position:absolute;width:44px;height:36px;transform:translate(-50%,-50%);will-change:transform;z-index:5;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25));}
+    .butterfly svg{width:100%;height:100%;display:block;}
+    @keyframes flap{0%,100%{transform:rotate(4deg) scale(1.02);}50%{transform:rotate(-6deg) scale(0.98);}}
+    .butterfly .wL{transform-origin:right center;animation:flap .6s ease-in-out infinite;}
+    .butterfly .wR{transform-origin:left center;animation:flap .6s ease-in-out infinite reverse;}
 
-  /* Flip por clases (robusto) */
-  .player.face-left svg{
-    transform:scaleX(-1);
-    transform-origin:50% 50%;
-    transform-box:fill-box;
-  }
-  .player.face-right svg{
-    transform:scaleX(1);
-    transform-origin:50% 50%;
-    transform-box:fill-box;
-  }
+    /* Modal y fin */
+    .modal,.end-screen{position:absolute;inset:0;display:grid;place-items:center;z-index:50;}
+    .hidden{display:none !important;}
+    .overlay{position:absolute;inset:0;background:rgba(4,21,39,.45);backdrop-filter:blur(2px);} 
+    .dialog,.panel{position:relative;width:min(92vw,920px);max-height:min(86vh,720px);overflow:auto;background:var(--panel);border-radius:16px;padding:18px 18px 14px;box-shadow:var(--shadow);} 
+    .dialog h2{margin:0 0 8px;font-size:clamp(1.1rem,2.4vw,1.5rem);} .dialog p{margin:6px 0 0;font-size:clamp(.95rem,2vw,1.05rem);} 
+    .dialog .multiline{white-space:pre-wrap; font-size:clamp(.95rem,2vw,1.05rem);} 
+    .dialog .sources{margin-top:10px;font-size:.95rem;color:var(--ink-soft);} .dialog .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;} 
+    .close-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:10px;border:0;background:#fff;cursor:pointer;box-shadow:var(--shadow);font-size:20px;line-height:1;} 
+    .panel h2{margin:0 0 8px;font-size:clamp(1.2rem,2.8vw,1.8rem);} .panel p{margin:10px 0 16px;}
 
-  /* ===== Mariposas ===== */
-  .butterfly{position:absolute;width:44px;height:36px;transform:translate(-50%,-50%);will-change:transform;z-index:5;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25));}
-  .butterfly svg{width:100%;height:100%;display:block;}
-  @keyframes flap{0%,100%{transform:rotate(4deg) scale(1.02);}50%{transform:rotate(-6deg) scale(0.98);}}
-  .butterfly .wL{transform-origin:right center;animation:flap .6s ease-in-out infinite;}
-  .butterfly .wR{transform-origin:left center;animation:flap .6s ease-in-out infinite reverse;}
+    /* Controles táctiles */
+    .touch-ui{position:absolute;inset:auto 12px 12px 12px;display:flex;align-items:flex-end;gap:12px;z-index:40;pointer-events:none;}
+    .joystick{pointer-events:auto;position:relative;width:112px;height:112px;border-radius:50%;background:rgba(255,255,255,.55);backdrop-filter:blur(6px);box-shadow:var(--shadow);touch-action:none;}
+    .joystick .stick{position:absolute;left:50%;top:50%;width:56px;height:56px;transform:translate(-50%,-50%);border-radius:50%;background:rgba(255,255,255,.95);border:2px solid rgba(0,0,0,.08);box-shadow:var(--shadow);} 
+    .dpad{pointer-events:auto;display:grid;grid-template:" . up  . " 40px "left . right" 40px " . down . " 40px/40px 40px 40px;gap:6px;background:rgba(255,255,255,.55);padding:8px;border-radius:16px;box-shadow:var(--shadow);} 
+    .dpad button{width:40px;height:40px;border-radius:10px;border:0;background:rgba(255,255,255,.95);font-weight:900;box-shadow:var(--shadow);cursor:pointer;} 
+    .dpad .up{grid-area:up;} .dpad .down{grid-area:down;} .dpad .left{grid-area:left;} .dpad .right{grid-area:right;}
 
-  /* ===== Modal y fin ===== */
-  .modal,.end-screen{position:absolute;inset:0;display:grid;place-items:center;z-index:50;}
-  .hidden{display:none !important;}
-  .overlay{position:absolute;inset:0;background:rgba(4,21,39,.45);backdrop-filter:blur(2px);} 
-  .dialog,.panel{position:relative;width:min(92vw,840px);max-height:min(86vh,720px);overflow:auto;background:var(--panel);border-radius:16px;padding:18px 18px 14px;box-shadow:var(--shadow);} 
-  .dialog h2{margin:0 0 8px;font-size:clamp(1.1rem,2.4vw,1.5rem);} .dialog p{margin:6px 0 0;font-size:clamp(.95rem,2vw,1.05rem);} 
-  .dialog .sources{margin-top:10px;font-size:.95rem;color:var(--ink-soft);} .dialog .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;} 
-  .close-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:10px;border:0;background:#fff;cursor:pointer;box-shadow:var(--shadow);font-size:20px;line-height:1;} 
-  .panel h2{margin:0 0 8px;font-size:clamp(1.2rem,2.8vw,1.8rem);} .panel p{margin:10px 0 16px;}
+    @media (min-width:900px){.touch-ui{opacity:.85;}}
+  </style>
+</head>
+<body>
+  <div id="game-root" tabindex="0" aria-label="Juego caza-bulos ambientales" role="application">
+    <div class="game-area" id="gameArea" aria-label="Área de juego">
+      <div class="hud" aria-live="polite">
+        <div class="counter">Bulos vistos: <span id="seenCount">0</span>/12</div>
+        <button class="btn" id="btnRestart" aria-label="Reiniciar partida">Reiniciar</button>
+      </div>
 
-  /* ===== Controles táctiles ===== */
+      <!-- Protagonista -->
+      <div class="player face-right" id="player" role="img" aria-label="Protagonista con cazamariposas">
+        <svg viewBox="0 0 56 56" aria-hidden="true">
+          <circle cx="20" cy="14" r="8" fill="#ffd38e" />
+          <rect x="12" y="22" width="16" height="18" rx="6" fill="#2563eb"/>
+          <rect x="10" y="40" width="10" height="12" rx="3" fill="#0ea5e9"/>
+          <rect x="20" y="40" width="10" height="12" rx="3" fill="#0ea5e9"/>
+          <g class="arm">
+            <rect x="24" y="24" width="18" height="6" rx="3" fill="#ffd38e"/>
+            <rect x="38" y="18" width="3" height="20" rx="1.5" fill="#8b5e3c"/>
+            <ellipse cx="45" cy="14" rx="9" ry="7" fill="#fff" stroke="#7aa2c8" stroke-width="2"/>
+            <ellipse cx="45" cy="14" rx="7" ry="5" fill="none" stroke="#7aa2c8" stroke-width="1.2" stroke-dasharray="2 2"/>
+          </g>
+        </svg>
+      </div>
+
+      <div id="butterflies" aria-label="Mariposas"></div>
+
+      <div class="touch-ui" aria-hidden="false">
+        <div class="joystick" id="joystick" aria-label="Joystick táctil"><div class="stick" id="stick"></div></div>
+        <div class="dpad" aria-label="Botones flecha táctiles">
+          <button class="up" data-dir="up" aria-label="Arriba">▲</button>
+          <button class="left" data-dir="left" aria-label="Izquierda">◀</button>
+          <button class="right" data-dir="right" aria-label="Derecha">▶</button>
+          <button class="down" data-dir="down" aria-label="Abajo">▼</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="overlay" id="overlay" tabindex="-1"></div>
+      <div class="dialog" role="document">
+        <button class="close-x" id="closeX" aria-label="Cerrar">×</button>
+        <h2 id="modalTitle">Título</h2>
+        <div id="modalText" class="multiline">Texto</div>
+        <p class="sources" id="modalSources"><strong>Enlace:</strong> —</p>
+        <div class="actions"><button class="btn secondary" id="modalOk" autofocus>Cerrar (Esc)</button></div>
+      </div>
+    </div>
+
+    <div class="end-screen hidden" id="endScreen" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+      <div class="overlay"></div>
+      <div class="panel">
+        <h2 id="endTitle">¡Enhorabuena! 🦋</h2>
+        <p>Has cazado los 12 bulos. ¿Otra partida?</p>
+        <button class="btn" id="playAgain">Volver a jugar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ----- Datos: 12 bulos con texto completo + enlace -----
+    const BULOS = [
+      {
+        id:1,
+        titulo:"“El clima siempre ha cambiado, esto no es diferente”",
+        texto:`Este argumento se repite mucho porque es cierto que a lo largo de la historia de la Tierra el clima ha experimentado variaciones naturales: glaciaciones, periodos interglaciares, épocas más cálidas impulsadas por cambios orbitales, erupciones volcánicas o variaciones en la radiación solar. Sin embargo, el cambio actual es radicalmente distinto. La velocidad del calentamiento global observado en los últimos 150 años no tiene precedentes en los últimos millones de años. Por ejemplo, al salir de la última glaciación, el planeta tardó unos 5.000 años en calentarse 5 °C. Hoy, hemos aumentado alrededor de 1,2 °C en poco más de un siglo, y seguimos sumando.
+
+Además, sabemos cuál es la causa: las emisiones de gases de efecto invernadero procedentes de la quema de carbón, petróleo y gas, así como de la deforestación y la agricultura intensiva. Los modelos climáticos que incluyen solo causas naturales (como volcanes o variaciones solares) no explican el aumento actual. Solo cuando se añaden las emisiones humanas, los modelos coinciden con lo observado. Por tanto, decir que “el clima siempre cambia” no es un argumento válido: es una forma de restar importancia a un fenómeno nuevo, causado por nosotros y con consecuencias mucho más rápidas y graves que cualquier variación pasada.`,
+        link:{ title:"NASA — Evidencias del cambio climático", url:"https://science.nasa.gov/climate-change/evidence/" }
+      },
+      {
+        id:2,
+        titulo:"“Hace frío hoy, ¿cómo puede haber calentamiento global?”",
+        texto:`Este bulo nace de confundir tiempo atmosférico con clima. El tiempo es lo que ocurre en un lugar concreto durante horas o días: puede nevar en Madrid en marzo o hacer un frío intenso en Nueva York en enero. En cambio, el clima es la media de condiciones meteorológicas a largo plazo (décadas) y a escala global. Que tengamos un invierno frío en una región no significa que el planeta no se esté calentando.
+
+De hecho, el aumento global de temperaturas está alterando también los patrones meteorológicos locales. El debilitamiento de la corriente en chorro (jet stream) en el hemisferio norte, vinculado al calentamiento del Ártico, puede provocar que masas de aire frío desciendan más al sur de lo habitual, generando olas de frío puntuales. Paradójicamente, estos episodios extremos son compatibles con un planeta que se calienta.
+
+Los datos globales son inequívocos: la última década (2014–2023) ha sido la más cálida registrada desde que hay registros, y 2023 marcó un récord histórico de temperatura media global. Un día frío no contradice el calentamiento; es como ver que baja la marea en una playa mientras la tendencia general del mar es subir. El error está en confundir escalas.`,
+        link:{ title:"NOAA — Tiempo vs. clima", url:"https://oceanservice.noaa.gov/facts/weather_climate.html" }
+      },
+      {
+        id:3,
+        titulo:"“Los científicos no están de acuerdo”",
+        texto:`Este mito se ha utilizado durante décadas para sembrar dudas. La estrategia se inspira en lo que hizo la industria del tabaco en los años 60 y 70: exagerar las pocas voces discordantes para aparentar falta de consenso. En el caso del cambio climático, el consenso científico es abrumador. Diversos estudios de metaanálisis sobre decenas de miles de artículos revisados por pares muestran que entre el 97 y el 99 % de los científicos climáticos coinciden en que el calentamiento global es real y causado principalmente por las actividades humanas.
+
+Un trabajo de referencia es el de Cook et al. (2016), que analizó más de 12.000 estudios científicos y encontró ese nivel de acuerdo. Además, instituciones como la NASA, la NOAA, la Organización Meteorológica Mundial, el IPCC y prácticamente todas las academias de ciencias del mundo respaldan esta conclusión.
+
+Decir que “los científicos no se ponen de acuerdo” es un bulo porque confunde el debate científico normal —sobre matices, proyecciones o impactos concretos— con un supuesto desacuerdo sobre lo básico. En realidad, no hay debate científico sobre si el cambio climático es real y antropogénico, sino sobre cómo será de rápido y cómo podemos mitigarlo.`,
+        link:{ title:"Cook et al. 2016 — Consensus on consensus", url:"https://repository.library.noaa.gov/view/noaa/62111" }
+      },
+      {
+        id:4,
+        titulo:"“El CO₂ es bueno para las plantas, no puede ser dañino”",
+        texto:`Este argumento parte de una verdad parcial: las plantas necesitan dióxido de carbono para hacer la fotosíntesis. Sin embargo, de ahí se extrapola erróneamente que cuanto más CO₂, mejor. La realidad es que el exceso de este gas en la atmósfera está provocando un desequilibrio global. Aunque en condiciones de laboratorio un aumento moderado de CO₂ puede estimular el crecimiento de algunas plantas, en los ecosistemas reales este efecto se ve limitado por otros factores como la disponibilidad de nutrientes, el agua o la temperatura.
+
+Además, el exceso de CO₂ no afecta solo a la vegetación terrestre. Gran parte se disuelve en los océanos, donde provoca acidificación marina, lo que daña a corales, moluscos y especies fundamentales para la cadena alimentaria. En tierra, el cambio climático asociado al CO₂ causa olas de calor, sequías y fenómenos extremos que perjudican mucho más a la agricultura de lo que la “fertilización por CO₂” podría beneficiar.
+
+Por último, los bosques y ecosistemas actuales no tienen capacidad de absorber todo el CO₂ que emitimos. La acumulación en la atmósfera es tan grande que se está alterando el balance energético del planeta, calentándolo más rápido de lo que los ecosistemas pueden adaptarse.`,
+        link:{ title:"Skeptical Science — CO₂ es 'comida para plantas' (revisión)", url:"https://skepticalscience.com/fact-brief-plant.html" }
+      },
+      {
+        id:5,
+        titulo:"“La Antártida está ganando hielo”",
+        texto:`Este bulo suele aparecer en titulares aislados que muestran un aumento de la extensión de hielo marino en ciertas zonas de la Antártida durante algunos años. Sin embargo, es importante diferenciar entre hielo marino estacional y masa de hielo continental. Mientras que la extensión del hielo marino puede variar anualmente por cambios en el viento y las corrientes, la tendencia a largo plazo es clara: el continente pierde masa neta cada año.
+
+Las observaciones de satélite y estudios de campo muestran que, especialmente en la Antártida occidental y en la península antártica, los glaciares se están derritiendo rápidamente. El balance global es negativo: la Antártida ha perdido aproximadamente 2.500 gigatoneladas de hielo desde 1992, contribuyendo a la subida del nivel del mar.
+
+El mito se refuerza porque algunas zonas, como la Antártida oriental, han mostrado cierto aumento de acumulación de nieve, lo que confunde a la opinión pública. Pero incluso teniendo en cuenta estas ganancias localizadas, la pérdida total es mucho mayor. Presentar este fenómeno como prueba de que “el cambio climático no existe” es una manipulación que ignora la evidencia global y los datos de largo plazo.`,
+        link:{ title:"NASA — Vital Signs: Ice Sheets", url:"https://climate.nasa.gov/vital-signs/ice-sheets/" }
+      },
+      {
+        id:6,
+        titulo:"“El Sol es el culpable del calentamiento, no los humanos”",
+        texto:`El Sol es, sin duda, la principal fuente de energía de la Tierra y ha influido en el clima a lo largo de millones de años. Sin embargo, las mediciones modernas muestran con claridad que en las últimas décadas la radiación solar no ha aumentado, mientras que las temperaturas globales sí lo han hecho de manera acelerada. De hecho, desde finales del siglo XX la actividad solar se ha mantenido estable o incluso ha mostrado una ligera disminución, mientras que el planeta sigue batiendo récords de calor.
+
+Los estudios comparativos confirman que la correlación entre la concentración de gases de efecto invernadero y el aumento de temperaturas es mucho más fuerte que con la radiación solar. Los modelos climáticos que incluyen únicamente factores naturales, como variaciones solares o actividad volcánica, no pueden explicar el calentamiento observado. Solo al añadir las emisiones humanas de CO₂ y otros gases se logra reproducir la evolución de la temperatura global.
+
+Culpar al Sol es, por tanto, una manera de desviar la atención de la verdadera causa: la actividad humana y la quema masiva de combustibles fósiles.`,
+        link:{ title:"NASA — Milankovitch y por qué no explican el calentamiento actual", url:"https://climate.nasa.gov/news/2949/why-milankovitch-orbital-cycles-cant-explain-earths-current-warming/" }
+      },
+      {
+        id:7,
+        titulo:"“Los registros de temperatura son dudosos / el gráfico del hockey stick es falso”",
+        texto:`Una de las estrategias más frecuentes de la desinformación climática consiste en poner en duda los datos. Se suele afirmar que los termómetros urbanos están contaminados por el “efecto isla de calor”, que los registros históricos están manipulados o que gráficos como el famoso “palo de hockey” (hockey stick) son falsos.
+
+La realidad es que existen múltiples líneas de evidencia independientes que confirman el calentamiento global. No dependemos solo de los termómetros urbanos: hay mediciones rurales, satélites, boyas oceánicas, registros de corales, anillos de árboles o núcleos de hielo que ofrecen la misma conclusión. El “hockey stick”, publicado por primera vez en 1999 por Mann et al., ha sido revisado y confirmado por numerosos estudios posteriores. La forma de ese gráfico, que muestra siglos de temperaturas relativamente estables seguidos de un brusco aumento en el siglo XX, ha sido validada con diferentes métodos.
+
+Poner en duda los registros es una forma de erosionar la confianza en la ciencia. Sin embargo, la convergencia de evidencias de tan diversas fuentes hace que la certeza sobre el calentamiento global sea sólida y difícil de rebatir.`,
+        link:{ title:"Skeptical Science — Evidencia del 'hockey stick'", url:"https://skepticalscience.com/broken-hockey-stick.htm" }
+      },
+      {
+        id:8,
+        titulo:"“Las energías renovables no funcionan / son poco fiables”",
+        texto:`Este bulo se centra en dos ideas: que las renovables son demasiado caras y que no pueden garantizar un suministro estable porque dependen del sol y del viento. Ambas afirmaciones han quedado desmentidas por los avances tecnológicos de las últimas décadas.
+
+En primer lugar, los costes de la energía solar y eólica han caído drásticamente: en muchos países ya son la forma más barata de generar electricidad. Según la Agencia Internacional de la Energía (IEA), en 2023 la energía solar fue la fuente más barata de nueva capacidad instalada a nivel mundial.
+
+En cuanto a la fiabilidad, la intermitencia se gestiona con almacenamiento en baterías, diversificación de fuentes, interconexiones entre regiones y el uso complementario de otras energías limpias como la hidroeléctrica o la geotermia. Cada vez más países demuestran que se puede integrar un alto porcentaje de renovables sin poner en riesgo la estabilidad del sistema eléctrico.
+
+Decir que las renovables “no funcionan” es un mito que ignora tanto la realidad tecnológica como el despliegue masivo que ya está ocurriendo en todo el mundo.`,
+        link:{ title:"IEA — Renewables 2023 (resumen)", url:"https://www.iea.org/reports/renewables-2023/executive-summary" }
+      },
+      {
+        id:9,
+        titulo:"“Los volcanes emiten más CO₂ que los humanos”",
+        texto:`Este mito intenta minimizar la responsabilidad humana sugiriendo que las emisiones volcánicas naturales superan a las nuestras. Los datos muestran lo contrario: la actividad volcánica global emite entre 0,13 y 0,44 gigatoneladas de CO₂ al año, mientras que las actividades humanas emiten alrededor de 36 gigatoneladas anuales. Es decir, más de 100 veces más.
+
+Los volcanes sí han influido en el clima en el pasado, pero normalmente por el efecto de los aerosoles (cenizas y dióxido de azufre) que enfrían temporalmente la atmósfera al reflejar radiación solar, no por las emisiones de CO₂. Por ejemplo, la erupción del Pinatubo en 1991 provocó un descenso temporal de las temperaturas globales de aproximadamente medio grado durante uno o dos años.
+
+Comparar emisiones humanas con volcánicas es un intento de desviar la atención. En realidad, la magnitud de las emisiones humanas ha superado ampliamente las variaciones naturales, y es la principal causa del calentamiento actual.`,
+        link:{ title:"USGS — ¿Emiten más CO₂ los volcanes que los humanos?", url:"https://www.usgs.gov/programs/VHP/volcanoes-can-affect-climate" }
+      },
+      {
+        id:10,
+        titulo:"“No podemos hacer nada, es demasiado tarde”",
+        texto:`Este bulo fomenta la inacción apelando a la desesperanza. Se difunde la idea de que los daños ya están hechos y que cualquier esfuerzo será inútil. Sin embargo, la ciencia del clima muestra que cada décima de grado cuenta. Limitar el calentamiento a 1,5 °C o 2 °C reducirá significativamente los impactos sobre salud, biodiversidad y economía en comparación con un escenario de 3 o 4 °C.
+
+El IPCC ha dejado claro que aún estamos a tiempo de mitigar los peores efectos si reducimos rápidamente las emisiones. El ritmo de despliegue de energías limpias, la mejora en eficiencia y la conservación de ecosistemas ofrecen oportunidades reales de cambio. Incluso en escenarios donde no se logra el objetivo de 1,5 °C, actuar ahora puede evitar impactos catastróficos.
+
+Decir que es “demasiado tarde” es un mensaje desmovilizador que beneficia a quienes no quieren cambios. En realidad, nunca es demasiado tarde para reducir daños. La diferencia entre actuar y no hacerlo se traduce en millones de vidas y ecosistemas afectados.`,
+        link:{ title:"IPCC 2023 — Informe de Síntesis (nota de prensa)", url:"https://www.ipcc.ch/2023/03/20/press-release-ar6-synthesis-report/" }
+      },
+      {
+        id:11,
+        titulo:"“El cambio climático solo afecta a osos polares o lugares lejanos”",
+        texto:`La imagen del oso polar en un bloque de hielo se ha convertido en símbolo del cambio climático, pero también ha contribuido a que algunas personas piensen que es un problema lejano, que solo afecta al Ártico. La realidad es muy distinta: los impactos ya se sienten en todo el mundo.
+
+En Europa, hemos visto olas de calor más intensas, como las de 2003, 2019 o 2022, que causaron decenas de miles de muertes. En España, los incendios forestales se han intensificado y las sequías prolongadas afectan a la agricultura y al suministro de agua. En Asia, las inundaciones extremas como las de Pakistán en 2022 desplazaron a millones de personas. En América, huracanes y tormentas son más destructivos por el aumento del nivel del mar y la energía acumulada en los océanos.
+
+El cambio climático no es un problema lejano: ya está afectando a nuestra salud, economía y seguridad. Cuanto más esperemos en actuar, mayores serán las consecuencias en nuestro día a día.
+Fuente: European Environment Agency – Climate impacts`,
+        link:{ title:"EEA — Climate change impacts, risks and adaptation in Europe", url:"https://www.eea.europa.eu/en/topics/in-depth/climate-change-impacts-risks-and-adaptation" }
+      },
+      {
+        id:12,
+        titulo:"“La acción individual no sirve de nada”",
+        texto:`Este mito busca desmotivar, sugiriendo que solo los gobiernos o grandes empresas pueden marcar la diferencia. Si bien es cierto que las decisiones políticas y económicas son cruciales, las acciones individuales tienen un papel clave.
+
+Por un lado, suman directamente en la reducción de emisiones: elegir transporte público o bicicleta en lugar del coche, reducir el consumo de carne, optar por energías renovables en el hogar o mejorar la eficiencia energética son decisiones que reducen la huella personal. Por otro lado, generan un efecto multiplicador cultural y social: cuando mucha gente adopta comportamientos sostenibles, cambia la norma social y se ejerce presión sobre las instituciones y las empresas para transformarse.
+
+Además, la acción individual inspira innovación, crea mercados para soluciones limpias y puede influir en las decisiones políticas a través del voto y la participación ciudadana. No es una cuestión de elegir entre acción individual o colectiva: necesitamos ambas. Cada gesto cuenta, y juntos son una fuerza transformadora.`,
+        link:{ title:"IPCC WGIII (2022) — Demand-side (40–70%)", url:"https://www.ipcc.ch/report/ar6/wg3/resources/spm-headline-statements/" }
+      }
+    ];
+
+    // ----- Utilidades -----
+    const $ = (q, el=document) => el.querySelector(q);
+    const $$ = (q, el=document) => Array.from(el.querySelectorAll(q));
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const rand = (min, max) => Math.random() * (max - min) + min;
+    const dist2 = (x1,y1,x2,y2)=>{const dx=x2-x1,dy=y2-y1;return dx*dx+dy*dy;};
+    function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+    // ----- Elementos -----
+    const root = $('#game-root');
+    const area = $('#gameArea');
+    const playerEl = $('#player');
+    const butterfliesEl = $('#butterflies');
+    const seenCountEl = $('#seenCount');
+    const btnRestart = $('#btnRestart');
+
+    const modal = $('#modal'), modalTitle = $('#modalTitle'), modalText = $('#modalText'),
+          modalSources = $('#modalSources'), modalOk = $('#modalOk'), closeX = $('#closeX'), overlay = $('#overlay');
+    const endScreen = $('#endScreen'), playAgain = $('#playAgain');
+    const joystick = $('#joystick'), stick = $('#stick');
+    const dpadButtons = $$('.dpad button');
+
+    // ----- Estado -----
+    const STATE = {
+      w:0, h:0, running:true, lastT:0, speed:260,
+      player:{ x:200, y:200, r:24 },
+      keys:{ up:false, down:false, left:false, right:false },
+      joy:{ active:false, dx:0, dy:0, baseX:0, baseY:0, max:40 },
+      butterflies:[], mapping:[], seenIds:new Set(), total:BULOS.length,
+      facing:'right' // 'right' | 'left'
+    };
+
+    function resize(){
+      const rect = area.getBoundingClientRect();
+      STATE.w = rect.width; STATE.h = rect.height;
+      STATE.player.x = clamp(STATE.player.x, STATE.player.r, STATE.w - STATE.player.r);
+      STATE.player.y = clamp(STATE.player.y, STATE.player.r, STATE.h - STATE.player.r);
+    }
+    addEventListener('resize', resize, { passive:true });
+
+    // ----- Mariposas -----
+    function createButterflyElement(h, s=70, l=55){
+      const div = document.createElement('div'); div.className='butterfly'; div.setAttribute('role','img'); div.setAttribute('aria-label','Mariposa');
+      const color=`hsl(${h} ${s}% ${l}%)`;
+      div.innerHTML=`
+        <svg viewBox="0 0 120 90" aria-hidden="true">
+          <rect x="55" y="35" width="10" height="20" rx="5" fill="#333"/><circle cx="60" cy="32" r="6" fill="#333"/>
+          <g class="wL"><path d="M60,40 C30,20 18,10 14,26 C10,42 28,55 44,58 C50,59 54,58 58,52 Z" fill="${color}" opacity="0.95"/></g>
+          <g class="wR"><path d="M60,40 C90,20 102,10 106,26 C110,42 92,55 76,58 C70,59 66,58 62,52 Z" fill="${color}" opacity="0.95"/></g>
+          <circle cx="45" cy="50" r="5" fill="rgba(255,255,255,.65)"/><circle cx="75" cy="50" r="5" fill="rgba(255,255,255,.65)"/>
+        </svg>`;
+      return div;
+    }
+
+    function spawnButterflies(){
+      butterfliesEl.innerHTML=''; STATE.butterflies=[]; STATE.mapping = shuffle([...Array(BULOS.length).keys()]);
+      const margin=50, placed=[];
+      for(let i=0;i<BULOS.length;i++){
+        const hue=Math.round((360/BULOS.length)*i + rand(-10,10));
+        const el=createButterflyElement(hue); butterfliesEl.appendChild(el);
+        // Dirección inicial y parámetros de vuelo errático
+        let angle = rand(0, Math.PI*2);
+        const base = rand(50,110);
+        let vx = Math.cos(angle) * base;
+        let vy = Math.sin(angle) * base;
+        const b={ id:i, x:0, y:0, vx, vy, r:18, el,
+          base,
+          speedFactor: 1,
+          speedTarget: rand(0.6,1.8),
+          speedTimer: rand(0.5,1.4),
+          wander: rand(0.25, 0.9)
+        };
+        let tries=0;
+        do{ b.x=rand(margin, STATE.w-margin); b.y=rand(margin, STATE.h-margin); tries++; if(tries>500) break; }
+        while(placed.some(p=>dist2(p.x,p.y,b.x,b.y)<(p.r+b.r+26)**2));
+        placed.push({x:b.x,y:b.y,r:b.r}); STATE.butterflies.push(b); setPos(b.el,b.x,b.y);
+      }
+    }
+
+    // ----- Movimiento -----
+    function setPos(el,x,y){ el.style.transform = `translate(${x}px, ${y}px) translate(-50%,-50%)`; }
+    function updateFacing(){ playerEl.classList.toggle('face-left', STATE.facing === 'left'); playerEl.classList.toggle('face-right', STATE.facing !== 'left'); }
+
+    function update(dt){
+      if(!STATE.running) return;
+      let dx=(STATE.keys.right?1:0)-(STATE.keys.left?1:0);
+      let dy=(STATE.keys.down?1:0)-(STATE.keys.up?1:0);
+      if(STATE.joy.active){ dx+=STATE.joy.dx; dy+=STATE.joy.dy; }
+      if(dx<-0.01) STATE.facing='left'; else if(dx>0.01) STATE.facing='right';
+      updateFacing();
+      if(dx!==0 || dy!==0){ const len=Math.hypot(dx,dy); dx/=len; dy/=len; STATE.player.x = clamp(STATE.player.x + dx*STATE.speed*dt, STATE.player.r, STATE.w-STATE.player.r); STATE.player.y = clamp(STATE.player.y + dy*STATE.speed*dt, STATE.player.r, STATE.h-STATE.player.r); }
+      setPos(playerEl, STATE.player.x, STATE.player.y);
+
+      // Vuelo errático (suave + serpenteo)
+      for(const b of STATE.butterflies){
+        b.speedTimer -= dt; if (b.speedTimer <= 0){ b.speedTimer = rand(0.4,1.3); b.speedTarget = rand(0.5,2.0); }
+        b.speedFactor += (b.speedTarget - b.speedFactor) * Math.min(1, dt*2.5);
+        const turn = rand(-b.wander, b.wander) * dt; const cos=Math.cos(turn), sin=Math.sin(turn);
+        const rx = b.vx * cos - b.vy * sin; const ry = b.vx * sin + b.vy * cos;
+        const mag = Math.hypot(rx, ry) || 1; const eff = b.base * b.speedFactor; b.vx = (rx/mag)*eff; b.vy = (ry/mag)*eff;
+        b.x+=b.vx*dt; b.y+=b.vy*dt;
+        if(b.x<b.r){b.x=b.r; b.vx*=-1;} if(b.x>STATE.w-b.r){b.x=STATE.w-b.r; b.vx*=-1;}
+        if(b.y<b.r){b.y=b.r; b.vy*=-1;} if(b.y>STATE.h-b.r){b.y=STATE.h-b.r; b.vy*=-1;}
+        setPos(b.el,b.x,b.y);
+      }
+
+      const pr=STATE.player.r;
+      for(const b of [...STATE.butterflies]){ const rsum=pr+b.r; if(dist2(STATE.player.x,STATE.player.y,b.x,b.y)<=rsum*rsum){ captureButterfly(b); } }
+    }
+
+    function loop(t){ const now=t*0.001, dt=Math.min(0.033, now-(STATE.lastT||now)); STATE.lastT=now; update(dt); requestAnimationFrame(loop); }
+
+    // ----- Captura / modal -----
+    function captureButterfly(b){
+      if(!STATE.butterflies.includes(b)) return;
+      const data = BULOS[ STATE.mapping[b.id] ];
+      if(STATE.seenIds.has(data.id)) return;
+      STATE.butterflies = STATE.butterflies.filter(x=>x!==b); b.el.remove();
+      STATE.seenIds.add(data.id); seenCountEl.textContent = STATE.seenIds.size.toString();
+      openModal(data);
+    }
+    function openModal(data){
+      STATE.running=false; modalTitle.textContent=data.titulo; modalText.textContent=data.texto;
+      modalSources.innerHTML = data.link ? '<strong>Enlace:</strong> <a href="'+data.link.url+'" target="_blank" rel="noopener noreferrer">'+data.link.title+'</a>' : '<strong>Enlace:</strong> —';
+      modal.classList.remove('hidden'); setTimeout(()=>modalOk.focus(),0);
+    }
+    function closeModal(){ if(modal.classList.contains('hidden')) return; modal.classList.add('hidden'); if(STATE.seenIds.size>=STATE.total){ showEnd(); } else { STATE.running=true; root.focus(); } }
+    function showEnd(){ endScreen.classList.remove('hidden'); setTimeout(()=>playAgain.focus(),0); }
+    function hideEnd(){ endScreen.classList.add('hidden'); root.focus(); }
+
+    // ----- Reinicio -----
+    function resetGame(){ STATE.seenIds.clear(); seenCountEl.textContent='0'; STATE.running=true; STATE.player.x=STATE.w*0.5; STATE.player.y=STATE.h*0.62; STATE.facing='right'; updateFacing(); spawnButterflies(); hideEnd(); root.focus(); }
+
+    // ----- Eventos teclado -----
+    function setKey(e,isDown){
+      switch(e.key){
+        case 'ArrowUp': case 'w': case 'W': STATE.keys.up=isDown; break;
+        case 'ArrowDown': case 's': case 'S': STATE.keys.down=isDown; break;
+        case 'ArrowLeft': case 'a': case 'A': STATE.keys.left=isDown; break;
+        case 'ArrowRight': case 'd': case 'D': STATE.keys.right=isDown; break;
+        case 'Escape': if(!modal.classList.contains('hidden')) closeModal(); else if(!endScreen.classList.contains('hidden')) resetGame(); break;
+      }
+    }
+    root.addEventListener('keydown', e=>{ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault(); setKey(e,true); });
+    root.addEventListener('keyup', e=>setKey(e,false));
+
+    // ----- Modal -----
+    overlay.addEventListener('click', closeModal); modalOk.addEventListener('click', closeModal); closeX.addEventListener('click', closeModal);
+    modal.addEventListener('keydown', e=>{ if(e.key==='Tab'){ const f=[closeX,modalOk]; const i=f.indexOf(document.activeElement); const ni=e.shiftKey?(i<=0?f.length-1:i-1):(i>=f.length-1?0:i+1); f[ni].focus(); e.preventDefault(); } });
+
+    // ----- Botones UI -----
+    btnRestart.addEventListener('click', resetGame);
+    playAgain.addEventListener('click', resetGame);
+
+    // ----- Táctil -----
+    function joyStart(ev){ ev.preventDefault(); STATE.joy.active=true; const r=joystick.getBoundingClientRect(); STATE.joy.baseX=r.left+r.width/2; STATE.joy.baseY=r.top+r.height/2; joyMove(ev); }
+    function joyMove(ev){ if(!STATE.joy.active) return; const p=getPoint(ev); const dx=p.x-STATE.joy.baseX, dy=p.y-STATE.joy.baseY; const len=Math.hypot(dx,dy), max=STATE.joy.max, k=len>max?(max/len):1; const sx=dx*k, sy=dy*k; stick.style.transform=`translate(${sx}px, ${sy}px) translate(-50%,-50%)`; STATE.joy.dx=(len<6)?0:(dx/max); STATE.joy.dy=(len<6)?0:(dy/max); }
+    function joyEnd(){ STATE.joy.active=false; STATE.joy.dx=0; STATE.joy.dy=0; stick.style.transform='translate(-50%,-50%)'; }
+    function getPoint(ev){ if(ev.touches&&ev.touches[0]) return {x:ev.touches[0].clientX,y:ev.touches[0].clientY}; return {x:ev.clientX,y:ev.clientY}; }
+    joystick.addEventListener('pointerdown', joyStart);
+    addEventListener('pointermove', joyMove); addEventListener('pointerup', joyEnd);
+    joystick.addEventListener('touchstart', joyStart, { passive:false });
+    addEventListener('touchmove', joyMove, { passive:false }); addEventListener('touchend', joyEnd);
+    function dpadPress(dir,down){ if(down){ if(dir==='up')STATE.keys.up=true; if(dir==='down')STATE.keys.down=true; if(dir==='left')STATE.keys.left=true; if(dir==='right')STATE.keys.right=true; } else { if(dir==='up')STATE.keys.up=false; if(dir==='down')STATE.keys.down=false; if(dir==='left')STATE.keys.left=false; if(dir==='right')STATE.keys.right=false; } }
+    dpadButtons.forEach(btn=>{ const dir=btn.dataset.dir, downEv=e=>{e.preventDefault();dpadPress(dir,true);}, upEv=e=>{e.preventDefault();dpadPress(dir,false);}; btn.addEventListener('pointerdown',downEv); btn.addEventListener('pointerup',upEv); btn.addEventListener('pointerleave',upEv); btn.addEventListener('touchstart',downEv,{passive:false}); btn.addEventListener('touchend',upEv); btn.addEventListener('touchcancel',upEv); });
+
+    // ----- Inicio -----
+    function init(){
+      resize();
+      playerEl.style.left='0px'; playerEl.style.top='0px';
+      STATE.player.x=STATE.w*0.5; STATE.player.y=STATE.h*0.62; STATE.facing='right'; updateFacing();
+      setPos(playerEl, STATE.player.x, STATE.player.y);
+      spawnButterflies();
+      root.focus();
+      requestAnimationFrame(loop);
+    }
+    addEventListener('load', init);
+  </script>
+
+  <noscript>
+    <div style="position:fixed; inset:0; display:grid; place-items:center; background:#001b2e; color:#fff; z-index:9999; padding:24px; text-align:center;">
+      <div><h2 style="margin:0 0 8px;">Este juego necesita JavaScript</h2>
+      <p style="opacity:.9; max-width:680px;">Si lo incrustas en un bloque HTML de WordPress.com y no se ve, usa un iframe desde un hosting externo o un método que permita ejecutar JS.</p></div>
+    </div>
+  </noscript>
+</body>
+</html>
   .touch-ui{position:absolute;inset:auto 12px 12px 12px;display:flex;align-items:flex-end;gap:12px;z-index:40;pointer-events:none;}
   .joystick{pointer-events:auto;position:relative;width:112px;height:112px;border-radius:50%;background:rgba(255,255,255,.55);backdrop-filter:blur(6px);box-shadow:var(--shadow);touch-action:none;}
   .joystick .stick{position:absolute;left:50%;top:50%;width:56px;height:56px;transform:translate(-50%,-50%);border-radius:50%;background:rgba(255,255,255,.95);border:2px solid rgba(0,0,0,.08);box-shadow:var(--shadow);} 
