@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Caza‑bulos ambientales · Juego</title>
+  <title>Caza-bulos ambientales · Juego</title>
   <style>
     /* ===========
-       ÁREA: Reset local y variables
+       Reset local y variables
        =========== */
     #game-root, #game-root * { box-sizing: border-box; }
     #game-root {
@@ -22,22 +22,22 @@
       position: relative;
       width: 100%;
       min-height: 100vh;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
       color: var(--ink);
       overflow: hidden; /* evita scroll en el bloque */
       line-height: 1.3;
     }
 
     /* ===========
-       ÁREA: Escena de juego
+       Escena
        =========== */
     #game-root .game-area {
       position: relative;
       width: 100%;
-      height: 100vh; /* ocupa el viewport del bloque */
+      height: 100vh;
       background: radial-gradient(120% 100% at 50% 0%, var(--bg1) 0%, var(--bg0) 50%, #a7d8ff 100%);
       overflow: hidden;
-      touch-action: none; /* evita scroll por gesto en móviles */
+      touch-action: none;
       user-select: none;
     }
 
@@ -78,11 +78,13 @@
     #game-root .btn.danger { background: var(--danger); }
 
     /* ===========
-       ÁREA: Protagonista (SVG dentro de un contenedor)
+       Protagonista
        =========== */
     #game-root .player {
       position: absolute;
       width: 56px; height: 56px;
+      /* Fallback visible si JS no carga: */
+      left: 50%; top: 62%;
       transform: translate(-50%, -50%);
       will-change: transform;
       z-index: 10;
@@ -97,7 +99,7 @@
     #game-root .player .arm { transform-origin: 36px 16px; animation: sway 1.2s ease-in-out infinite; }
 
     /* ===========
-       ÁREA: Mariposas
+       Mariposas
        =========== */
     #game-root .butterfly {
       position: absolute;
@@ -116,7 +118,7 @@
     #game-root .butterfly .wR { transform-origin: left center; animation: flap .6s ease-in-out infinite reverse; }
 
     /* ===========
-       ÁREA: Modal de bulo
+       Modal y fin
        =========== */
     #game-root .modal,
     #game-root .end-screen {
@@ -166,15 +168,11 @@
       font-size: 20px;
       line-height: 1;
     }
-
-    /* ===========
-       ÁREA: Pantalla final
-       =========== */
     #game-root .panel h2 { margin: 0 0 8px; font-size: clamp(1.2rem, 2.8vw, 1.8rem); }
     #game-root .panel p { margin: 10px 0 16px; }
 
     /* ===========
-       ÁREA: Controles táctiles
+       Controles táctiles
        =========== */
     #game-root .touch-ui {
       position: absolute;
@@ -183,11 +181,10 @@
       align-items: flex-end;
       gap: 12px;
       z-index: 40;
-      pointer-events: none; /* el contenedor no capta eventos */
+      pointer-events: none;
     }
-    /* Joystick */
-    #game-root .joystick {
-      pointer-events: auto; /* sí capta eventos */
+    .joystick {
+      pointer-events: auto;
       position: relative;
       width: 112px; height: 112px;
       border-radius: 50%;
@@ -196,7 +193,7 @@
       box-shadow: var(--shadow);
       touch-action: none;
     }
-    #game-root .joystick .stick {
+    .joystick .stick {
       position: absolute;
       left: 50%; top: 50%;
       width: 56px; height: 56px;
@@ -206,8 +203,7 @@
       border: 2px solid rgba(0,0,0,.08);
       box-shadow: var(--shadow);
     }
-    /* Botones flecha */
-    #game-root .dpad {
+    .dpad {
       pointer-events: auto;
       display: grid;
       grid-template:
@@ -220,7 +216,7 @@
       border-radius: 16px;
       box-shadow: var(--shadow);
     }
-    #game-root .dpad button {
+    .dpad button {
       width: 40px; height: 40px;
       border-radius: 10px;
       border: 0;
@@ -229,25 +225,17 @@
       box-shadow: var(--shadow);
       cursor: pointer;
     }
-    #game-root .dpad .up   { grid-area: up; }
-    #game-root .dpad .down { grid-area: down; }
-    #game-root .dpad .left { grid-area: left; }
-    #game-root .dpad .right{ grid-area: right; }
+    .dpad .up   { grid-area: up; }
+    .dpad .down { grid-area: down; }
+    .dpad .left { grid-area: left; }
+    .dpad .right{ grid-area: right; }
 
-    /* Ocultar controles táctiles en pantallas grandes si hay teclado */
     @media (min-width: 900px) {
       #game-root .touch-ui { opacity: .85; }
     }
   </style>
 </head>
 <body>
-  <!--
-    Juego: Caza‑bulos ambientales
-    - 10 mariposas moviéndose.
-    - Protagonista con cazamariposas (teclado y joystick táctil).
-    - Al capturar: modal con el bulo y la aclaración. Se incrementa contador.
-    - Al cerrar el modal: la mariposa ya no vuelve. Al llegar a 10: pantalla final.
-  -->
   <div id="game-root" tabindex="0" aria-label="Juego caza-bulos ambientales" role="application">
     <div class="game-area" id="gameArea" aria-label="Área de juego">
       <!-- HUD -->
@@ -258,9 +246,9 @@
 
       <!-- Protagonista -->
       <div class="player" id="player" role="img" aria-label="Protagonista con cazamariposas">
-        <!-- SVG simple del personaje con red -->
+        <!-- SVG del personaje -->
         <svg viewBox="0 0 56 56" aria-hidden="true">
-          <!-- cuerpo -->
+          <!-- cabeza / cuerpo -->
           <circle cx="20" cy="14" r="8" fill="#ffd38e" />
           <rect x="12" y="22" width="16" height="18" rx="6" fill="#2563eb"/>
           <rect x="10" y="40" width="10" height="12" rx="3" fill="#0ea5e9"/>
@@ -268,9 +256,7 @@
           <!-- brazo + red -->
           <g class="arm">
             <rect x="24" y="24" width="18" height="6" rx="3" fill="#ffd38e"/>
-            <!-- mango -->
             <rect x="38" y="18" width="3" height="20" rx="1.5" fill="#8b5e3c"/>
-            <!-- aro de red -->
             <ellipse cx="45" cy="14" rx="9" ry="7" fill="#fff" stroke="#7aa2c8" stroke-width="2"/>
             <ellipse cx="45" cy="14" rx="7" ry="5" fill="none" stroke="#7aa2c8" stroke-width="1.2" stroke-dasharray="2 2"/>
           </g>
@@ -321,69 +307,39 @@
 
   <script>
     // ===========================
-    // DATOS: Bulos ambientales
+    // Datos de bulos
     // ===========================
     const BULOS = [
-      {
-        id: 1,
-        titulo: "El clima siempre ha cambiado — esto no es diferente",
+      { id: 1,  titulo: "El clima siempre ha cambiado — esto no es diferente",
         texto: "Aunque el clima de la Tierra ha variado en el pasado, el ritmo actual de calentamiento es mucho más rápido que cualquier variación natural en millones de años.",
-        fuentes: ["Covering Climate Now", "#ThinkLandscape", "Covering Climate Now"]
-      },
-      {
-        id: 2,
-        titulo: "Está haciendo frío hoy, ¿cómo puede haber calentamiento global?",
+        fuentes: ["Covering Climate Now", "#ThinkLandscape", "Covering Climate Now"] },
+      { id: 2,  titulo: "Está haciendo frío hoy, ¿cómo puede haber calentamiento global?",
         texto: "Esta confusión surge de mezclar clima (corto plazo, local) con tiempo atmosférico. Aunque haya días fríos, la tendencia global sigue siendo de aumento de temperatura.",
-        fuentes: ["UNEP - UN Environment Programme", "Greenpeace"]
-      },
-      {
-        id: 3,
-        titulo: "Los científicos no están de acuerdo sobre el cambio climático",
+        fuentes: ["UNEP - UN Environment Programme", "Greenpeace"] },
+      { id: 3,  titulo: "Los científicos no están de acuerdo sobre el cambio climático",
         texto: "La evidencia científica es clara: más del 97–99 % de los estudios revisados concluyen que el cambio climático es consecuencia de la actividad humana.",
-        fuentes: ["#ThinkLandscape"]
-      },
-      {
-        id: 4,
-        titulo: "El CO₂ es necesario para las plantas, no puede ser dañino",
+        fuentes: ["#ThinkLandscape"] },
+      { id: 4,  titulo: "El CO₂ es necesario para las plantas, no puede ser dañino",
         texto: "Es cierto que las plantas necesitan CO₂, pero la cantidad adicional liberada hoy en día sobrepasa la capacidad de absorción natural, especialmente con la deforestación.",
-        fuentes: ["National Grid"]
-      },
-      {
-        id: 5,
-        titulo: "No ha calentado desde 1998 (o hubo una pausa)",
+        fuentes: ["National Grid"] },
+      { id: 5,  titulo: "No ha calentado desde 1998 (o hubo una pausa)",
         texto: "Durante 1998–2012 se observó una moderación en el aumento de temperatura superficial en algunos registros, pero estudios posteriores demuestran que ese aparente 'hiato' fue artefacto de variabilidad natural y datos incompletos — incluso el sistema climático siguió acumulando calor.",
-        fuentes: ["Wikipedia"]
-      },
-      {
-        id: 6,
-        titulo: "Se avecina una nueva era de hielo (fue predicha en los años 70)",
+        fuentes: ["Wikipedia"] },
+      { id: 6,  titulo: "Se avecina una nueva era de hielo (fue predicha en los años 70)",
         texto: "Sí hubo algunos estudios que especularon sobre enfriamiento, pero la gran mayoría ya vaticinaba calentamiento, y los modelos actuales han demostrado ser bastante fiables.",
-        fuentes: ["#ThinkLandscape"]
-      },
-      {
-        id: 7,
-        titulo: "Antártida está ganando hielo, no perdiendo",
+        fuentes: ["#ThinkLandscape"] },
+      { id: 7,  titulo: "Antártida está ganando hielo, no perdiendo",
         texto: "Aunque algunas partes (como la Antártida oriental) acumulan más nieve, en conjunto el continente pierde más masa por fusión en otras zonas, contribuyendo al aumento del nivel del mar.",
-        fuentes: ["#ThinkLandscape"]
-      },
-      {
-        id: 8,
-        titulo: "El Sol es el culpable del calentamiento, no los humanos",
+        fuentes: ["#ThinkLandscape"] },
+      { id: 8,  titulo: "El Sol es el culpable del calentamiento, no los humanos",
         texto: "Las observaciones muestran que la radiación solar y la temperatura global han divergido en las últimas tres décadas, mientras los gases de efecto invernadero sí muestran correlación directa con el calentamiento.",
-        fuentes: ["Skeptical Science"]
-      },
-      {
-        id: 9,
-        titulo: "El gráfico 'hockey stick' es falso / los registros de temperatura son dudosos",
+        fuentes: ["Skeptical Science"] },
+      { id: 9,  titulo: "El gráfico 'hockey stick' es falso / los registros de temperatura son dudosos",
         texto: "Muchos argumentos atacan la validez de los registros históricos, pero las series de temperatura, incluso desde zonas rurales o con termómetros tradicionales, confirman la tendencia al alza, y los estudios que critican el 'hockey stick' carecen de respaldo robusto.",
-        fuentes: ["Skeptical Science"]
-      },
-      {
-        id: 10,
-        titulo: "Radioactividad, rayos cósmicos o procesos naturales explican todo",
+        fuentes: ["Skeptical Science"] },
+      { id: 10, titulo: "Radioactividad, rayos cósmicos o procesos naturales explican todo",
         texto: "Argumentos que desvían el foco científico hacia procesos como rayos cósmicos o efectos naturales han sido desmentidos: no hay correlación significativa con el calentamiento actual, mientras el CO₂ antropogénico sí es el principal factor.",
-        fuentes: []
-      }
+        fuentes: [] }
     ];
 
     // ===========================
@@ -393,7 +349,6 @@
     const $$ = (q, el = document) => Array.from(el.querySelectorAll(q));
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
     const rand = (min, max) => Math.random() * (max - min) + min;
-    const choice = arr => arr[Math.floor(Math.random() * arr.length)];
 
     // ===========================
     // Elementos principales
@@ -435,23 +390,23 @@
       keys: { up:false, down:false, left:false, right:false },
       joy: { active:false, dx:0, dy:0, baseX:0, baseY:0, max:40 },
       butterflies: [],
-      mapping: [], // mapeo mariposa -> índice de BULOS
+      mapping: [],
       seenIds: new Set(),
-      total: BULOS.length
+      total: BULOS.length,
+      facing: 'right' // 'right' | 'left' (orientación del cazador)
     };
 
     function resize() {
       const rect = area.getBoundingClientRect();
       STATE.w = rect.width;
       STATE.h = rect.height;
-      // Evitar que el jugador se quede fuera
       STATE.player.x = clamp(STATE.player.x, STATE.player.r, STATE.w - STATE.player.r);
       STATE.player.y = clamp(STATE.player.y, STATE.player.r, STATE.h - STATE.player.r);
     }
     window.addEventListener('resize', resize, { passive: true });
 
     // ===========================
-    // Construcción de mariposas
+    // Mariposas
     // ===========================
     function createButterflyElement(h, s = 70, l = 55) {
       const div = document.createElement('div');
@@ -461,17 +416,14 @@
       const color = `hsl(${h} ${s}% ${l}%)`;
       div.innerHTML = `
         <svg viewBox="0 0 120 90" aria-hidden="true">
-          <!-- cuerpo -->
           <rect x="55" y="35" width="10" height="20" rx="5" fill="#333"/>
           <circle cx="60" cy="32" r="6" fill="#333"/>
-          <!-- alas -->
           <g class="wL">
             <path d="M60,40 C30,20 18,10 14,26 C10,42 28,55 44,58 C50,59 54,58 58,52 Z" fill="${color}" opacity="0.95"/>
           </g>
           <g class="wR">
             <path d="M60,40 C90,20 102,10 106,26 C110,42 92,55 76,58 C70,59 66,58 62,52 Z" fill="${color}" opacity="0.95"/>
           </g>
-          <!-- detalles -->
           <circle cx="45" cy="50" r="5" fill="rgba(255,255,255,.65)"/>
           <circle cx="75" cy="50" r="5" fill="rgba(255,255,255,.65)"/>
         </svg>
@@ -511,7 +463,7 @@
 
         placed.push({ x: b.x, y: b.y, r: b.r });
         STATE.butterflies.push(b);
-        setPos(el, b.x, b.y);
+        setPos(b.el, b.x, b.y);
       }
     }
 
@@ -527,7 +479,9 @@
     // Movimiento y colisiones
     // ===========================
     function setPos(el, x, y) {
-      el.style.transform = `translate(${x}px, ${y}px) translate(-50%,-50%)`;
+      // Flip horizontal SOLO al jugador si mira a la izquierda
+      const flip = (el === playerEl && STATE.facing === 'left') ? ' scaleX(-1)' : '';
+      el.style.transform = `translate(${x}px, ${y}px) translate(-50%,-50%)${flip}`;
     }
     function dist2(x1,y1,x2,y2){ const dx=x2-x1, dy=y2-y1; return dx*dx+dy*dy; }
 
@@ -538,13 +492,18 @@
       let dx = (STATE.keys.right?1:0) - (STATE.keys.left?1:0);
       let dy = (STATE.keys.down?1:0) - (STATE.keys.up?1:0);
 
-      // Mezclar joystick (táctil) si está activo
+      // Mezclar joystick táctil
       if (STATE.joy.active) {
         dx += STATE.joy.dx;
         dy += STATE.joy.dy;
       }
 
-      // Normalizar
+      // Decidir orientación SOLO si hay componente horizontal claro
+      if (dx < -0.01)      STATE.facing = 'left';
+      else if (dx > 0.01)  STATE.facing = 'right';
+      // Si dx ≈ 0, no cambiamos: arriba/abajo mantiene la última.
+
+      // Normalizar y mover
       if (dx !== 0 || dy !== 0) {
         const len = Math.hypot(dx, dy);
         dx /= len; dy /= len;
@@ -572,7 +531,6 @@
       for (const b of [...STATE.butterflies]) {
         const rsum = pr + b.r;
         if (dist2(STATE.player.x, STATE.player.y, b.x, b.y) <= rsum * rsum) {
-          // capturar
           captureButterfly(b);
         }
       }
@@ -590,47 +548,35 @@
     // Captura y modal
     // ===========================
     function captureButterfly(b) {
-      // Evitar doble captura
       if (!STATE.butterflies.includes(b)) return;
 
-      // Asociar bulo por índice mapeado
       const buloIndex = STATE.mapping[b.id];
       const data = BULOS[buloIndex];
-      if (STATE.seenIds.has(data.id)) return; // ya contado (seguro si se retiró el elemento)
+      if (STATE.seenIds.has(data.id)) return;
 
-      // Eliminar del array y del DOM
       STATE.butterflies = STATE.butterflies.filter(x => x !== b);
       b.el.remove();
 
-      // Marcar visto + contador
       STATE.seenIds.add(data.id);
       seenCountEl.textContent = STATE.seenIds.size.toString();
 
-      // Mostrar modal con el contenido
       openModal(data);
-
-      // Si ya están todos, el fin se muestra al cerrar el modal (para que se lea el último)
     }
 
     function openModal(data) {
       STATE.running = false;
       modalTitle.textContent = data.titulo;
       modalText.textContent = data.texto;
-      if (data.fuentes && data.fuentes.length) {
-        modalSources.innerHTML = '<strong>Fuentes:</strong> ' + data.fuentes.join(', ');
-      } else {
-        modalSources.innerHTML = '<strong>Fuentes:</strong> —';
-      }
+      modalSources.innerHTML = (data.fuentes && data.fuentes.length)
+        ? '<strong>Fuentes:</strong> ' + data.fuentes.join(', ')
+        : '<strong>Fuentes:</strong> —';
       modal.classList.remove('hidden');
-
-      // Gestión de foco accesible
       setTimeout(() => modalOk.focus(), 0);
     }
 
     function closeModal() {
       if (modal.classList.contains('hidden')) return;
       modal.classList.add('hidden');
-      // Si ya están todos, mostrar fin
       if (STATE.seenIds.size >= STATE.total) {
         showEnd();
       } else {
@@ -657,6 +603,7 @@
       STATE.running = true;
       STATE.player.x = STATE.w * 0.5;
       STATE.player.y = STATE.h * 0.62;
+      STATE.facing = 'right'; // orientación por defecto
       spawnButterflies();
       hideEnd();
       root.focus();
@@ -678,7 +625,6 @@
       }
     }
     root.addEventListener('keydown', (e) => {
-      // evitar scroll con flechas
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
       setKey(e, true);
     });
@@ -690,8 +636,6 @@
     overlay.addEventListener('click', closeModal);
     modalOk.addEventListener('click', closeModal);
     closeX.addEventListener('click', closeModal);
-
-    // Trampa básica de foco en modal (dos elementos)
     modal.addEventListener('keydown', (e) => {
       if (e.key === 'Tab') {
         const foci = [closeX, modalOk];
@@ -703,13 +647,13 @@
     });
 
     // ===========================
-    // Eventos: botones UI
+    // Botones UI
     // ===========================
     btnRestart.addEventListener('click', resetGame);
     playAgain.addEventListener('click', resetGame);
 
     // ===========================
-    // Controles táctiles: joystick
+    // Controles táctiles: joystick y dpad
     // ===========================
     function joyStart(ev) {
       ev.preventDefault();
@@ -729,7 +673,6 @@
       const k = len > max ? (max / len) : 1;
       const sx = dx * k, sy = dy * k;
       stick.style.transform = `translate(${sx}px, ${sy}px) translate(-50%,-50%)`;
-      // vector normalizado para movimiento
       STATE.joy.dx = (len < 6) ? 0 : (dx / (max));
       STATE.joy.dy = (len < 6) ? 0 : (dy / (max));
     }
@@ -749,8 +692,6 @@
     window.addEventListener('touchmove', joyMove, { passive: false });
     window.addEventListener('touchend', joyEnd);
 
-    // Botones flecha táctiles (mantener mientras se pulse)
-    const touchState = new Map(); // btn -> interval
     function dpadPress(dir, down) {
       if (down) {
         if (dir==='up') STATE.keys.up = true;
@@ -764,7 +705,7 @@
         if (dir==='right') STATE.keys.right = false;
       }
     }
-    dpadButtons.forEach(btn => {
+    $$('.dpad button').forEach(btn => {
       const dir = btn.dataset.dir;
       const downEv = (e) => { e.preventDefault(); dpadPress(dir, true); };
       const upEv = (e) => { e.preventDefault(); dpadPress(dir, false); };
@@ -781,27 +722,36 @@
     // ===========================
     function init() {
       resize();
-      // posición inicial del jugador
       STATE.player.x = STATE.w * 0.5;
       STATE.player.y = STATE.h * 0.62;
+      STATE.facing = 'right';
       setPos(playerEl, STATE.player.x, STATE.player.y);
       spawnButterflies();
       root.focus();
       requestAnimationFrame(loop);
     }
-    document.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('load', init);
 
-    // ===========================
-    // Prueba sencilla en consola (opcional)
-    // ===========================
-    window.__selfTest = function() {
-      console.log('Test: añadir mariposa artificial y colisionar…');
-      if (!STATE.butterflies.length) return console.warn('No hay mariposas');
-      const b = STATE.butterflies[0];
-      STATE.player.x = b.x; STATE.player.y = b.y;
-      update(0.016);
-      console.log('Vistos:', STATE.seenIds.size, 'Modal abierto:', !modal.classList.contains('hidden'));
+    // Utilidad local
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
     }
   </script>
+
+  <noscript>
+    <div style="position:fixed; inset:0; display:grid; place-items:center; background:#001b2e; color:#fff; z-index:9999; padding:24px; text-align:center;">
+      <div>
+        <h2 style="margin:0 0 8px;">Este juego necesita JavaScript</h2>
+        <p style="opacity:.9; max-width:680px;">
+          Si lo incrustas en un bloque HTML de WordPress.com y no se ve,
+          usa un iframe desde un hosting externo o un método que permita ejecutar JS.
+        </p>
+      </div>
+    </div>
+  </noscript>
 </body>
 </html>
