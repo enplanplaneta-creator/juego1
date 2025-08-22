@@ -3,254 +3,60 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Caza‑bulos ambientales · Juego</title>
+  <title>Caza-bulos ambientales · Juego</title>
   <style>
-    /* ===========
-       ÁREA: Reset local y variables
-       =========== */
     #game-root, #game-root * { box-sizing: border-box; }
     #game-root {
-      --bg0: #bfe3ff;
-      --bg1: #e9f5ff;
-      --ink: #0b243b;
-      --ink-soft: #254a6a;
-      --panel: rgba(255,255,255,.9);
-      --accent: #0ea5e9;
-      --accent-2: #22c55e;
-      --danger: #ef4444;
+      --bg0: #bfe3ff; --bg1: #e9f5ff; --ink:#0b243b; --ink-soft:#254a6a;
+      --panel: rgba(255,255,255,.9); --accent:#0ea5e9; --accent-2:#22c55e; --danger:#ef4444;
       --shadow: 0 6px 24px rgba(0,0,0,.15);
-      position: relative;
-      width: 100%;
-      min-height: 100vh;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-      color: var(--ink);
-      overflow: hidden; /* evita scroll en el bloque */
-      line-height: 1.3;
+      position: relative; width: 100%; min-height: 100vh; overflow: hidden;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Noto Sans";
+      color: var(--ink); line-height: 1.3;
     }
+    .game-area{position:relative;width:100%;height:100vh;background:radial-gradient(120% 100% at 50% 0%,var(--bg1) 0%,var(--bg0) 50%,#a7d8ff 100%);overflow:hidden;touch-action:none;user-select:none;}
+    .hud{position:absolute;inset:12px 12px auto 12px;display:flex;gap:8px;align-items:center;z-index:30;background:rgba(255,255,255,.6);backdrop-filter:blur(6px);border-radius:14px;padding:8px 10px;box-shadow:var(--shadow);}
+    .hud .counter{font-weight:700;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.9);}
+    .btn{appearance:none;border:0;border-radius:12px;background:var(--accent);color:#fff;padding:8px 12px;font-weight:700;cursor:pointer;transition:transform .05s ease,opacity .2s ease;box-shadow:var(--shadow);}
+    .btn:active{transform:translateY(1px) scale(0.99);} .btn.secondary{background:var(--accent-2);} .btn.danger{background:var(--danger);}
 
-    /* ===========
-       ÁREA: Escena de juego
-       =========== */
-    #game-root .game-area {
-      position: relative;
-      width: 100%;
-      height: 100vh; /* ocupa el viewport del bloque */
-      background: radial-gradient(120% 100% at 50% 0%, var(--bg1) 0%, var(--bg0) 50%, #a7d8ff 100%);
-      overflow: hidden;
-      touch-action: none; /* evita scroll por gesto en móviles */
-      user-select: none;
-    }
+    /* Protagonista: fallback visible si JS no corre (left/top). Con JS lo reseteamos a 0. */
+    .player{position:absolute;width:56px;height:56px;left:50%;top:62%;transform:translate(-50%,-50%);will-change:transform;z-index:10;pointer-events:none;}
+    .player svg{display:block;width:100%;height:100%;}
+    @keyframes sway{0%,100%{transform:rotate(-6deg);}50%{transform:rotate(6deg);}}
+    .player .arm{transform-origin:36px 16px;animation:sway 1.2s ease-in-out infinite;}
 
-    /* HUD superior */
-    #game-root .hud {
-      position: absolute;
-      inset: 12px 12px auto 12px;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      z-index: 30;
-      background: rgba(255,255,255,.6);
-      backdrop-filter: blur(6px);
-      border-radius: 14px;
-      padding: 8px 10px;
-      box-shadow: var(--shadow);
-    }
-    #game-root .hud .counter {
-      font-weight: 700;
-      padding: 6px 10px;
-      border-radius: 10px;
-      background: rgba(255,255,255,.9);
-    }
-    #game-root .btn {
-      appearance: none;
-      border: 0;
-      border-radius: 12px;
-      background: var(--accent);
-      color: #fff;
-      padding: 8px 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform .05s ease, opacity .2s ease;
-      box-shadow: var(--shadow);
-    }
-    #game-root .btn:active { transform: translateY(1px) scale(0.99); }
-    #game-root .btn.secondary { background: var(--accent-2); }
-    #game-root .btn.danger { background: var(--danger); }
+    /* Mariposas */
+    .butterfly{position:absolute;width:44px;height:36px;transform:translate(-50%,-50%);will-change:transform;z-index:5;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25));}
+    .butterfly svg{width:100%;height:100%;display:block;}
+    @keyframes flap{0%,100%{transform:rotate(4deg) scale(1.02);}50%{transform:rotate(-6deg) scale(0.98);}}
+    .butterfly .wL{transform-origin:right center;animation:flap .6s ease-in-out infinite;}
+    .butterfly .wR{transform-origin:left center;animation:flap .6s ease-in-out infinite reverse;}
 
-    /* ===========
-       ÁREA: Protagonista (SVG dentro de un contenedor)
-       =========== */
-    #game-root .player {
-      position: absolute;
-      width: 56px; height: 56px;
-      transform: translate(-50%, -50%);
-      will-change: transform;
-      z-index: 10;
-      pointer-events: none;
-    }
-    #game-root .player svg { display: block; width: 100%; height: 100%; }
-    /* animación ligera del brazo/red */
-    @keyframes sway {
-      0%,100% { transform: rotate(-6deg); }
-      50% { transform: rotate(6deg); }
-    }
-    #game-root .player .arm { transform-origin: 36px 16px; animation: sway 1.2s ease-in-out infinite; }
+    /* Modal y fin */
+    .modal,.end-screen{position:absolute;inset:0;display:grid;place-items:center;z-index:50;}
+    .hidden{display:none !important;}
+    .overlay{position:absolute;inset:0;background:rgba(4,21,39,.45);backdrop-filter:blur(2px);}
+    .dialog,.panel{position:relative;width:min(92vw,840px);max-height:min(86vh,720px);overflow:auto;background:var(--panel);border-radius:16px;padding:18px 18px 14px;box-shadow:var(--shadow);}
+    .dialog h2{margin:0 0 8px;font-size:clamp(1.1rem,2.4vw,1.5rem);} .dialog p{margin:6px 0 0;font-size:clamp(.95rem,2vw,1.05rem);}
+    .dialog .sources{margin-top:10px;font-size:.95rem;color:var(--ink-soft);} .dialog .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;}
+    .close-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:10px;border:0;background:#fff;cursor:pointer;box-shadow:var(--shadow);font-size:20px;line-height:1;}
+    .panel h2{margin:0 0 8px;font-size:clamp(1.2rem,2.8vw,1.8rem);} .panel p{margin:10px 0 16px;}
 
-    /* ===========
-       ÁREA: Mariposas
-       =========== */
-    #game-root .butterfly {
-      position: absolute;
-      width: 44px; height: 36px;
-      transform: translate(-50%,-50%);
-      will-change: transform;
-      z-index: 5;
-      filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));
-    }
-    #game-root .butterfly svg { width: 100%; height: 100%; display: block; }
-    @keyframes flap {
-      0%, 100% { transform: rotate(4deg) scale(1.02); }
-      50% { transform: rotate(-6deg) scale(0.98); }
-    }
-    #game-root .butterfly .wL { transform-origin: right center; animation: flap .6s ease-in-out infinite; }
-    #game-root .butterfly .wR { transform-origin: left center; animation: flap .6s ease-in-out infinite reverse; }
+    /* Controles táctiles */
+    .touch-ui{position:absolute;inset:auto 12px 12px 12px;display:flex;align-items:flex-end;gap:12px;z-index:40;pointer-events:none;}
+    .joystick{pointer-events:auto;position:relative;width:112px;height:112px;border-radius:50%;background:rgba(255,255,255,.55);backdrop-filter:blur(6px);box-shadow:var(--shadow);touch-action:none;}
+    .joystick .stick{position:absolute;left:50%;top:50%;width:56px;height:56px;transform:translate(-50%,-50%);border-radius:50%;background:rgba(255,255,255,.95);border:2px solid rgba(0,0,0,.08);box-shadow:var(--shadow);}
+    .dpad{pointer-events:auto;display:grid;grid-template:" . up  . " 40px "left . right" 40px " . down . " 40px/40px 40px 40px;gap:6px;background:rgba(255,255,255,.55);padding:8px;border-radius:16px;box-shadow:var(--shadow);}
+    .dpad button{width:40px;height:40px;border-radius:10px;border:0;background:rgba(255,255,255,.95);font-weight:900;box-shadow:var(--shadow);cursor:pointer;}
+    .dpad .up{grid-area:up;} .dpad .down{grid-area:down;} .dpad .left{grid-area:left;} .dpad .right{grid-area:right;}
 
-    /* ===========
-       ÁREA: Modal de bulo
-       =========== */
-    #game-root .modal,
-    #game-root .end-screen {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      z-index: 50;
-    }
-    #game-root .hidden { display: none !important; }
-    #game-root .overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(4, 21, 39, .45);
-      backdrop-filter: blur(2px);
-    }
-    #game-root .dialog,
-    #game-root .panel {
-      position: relative;
-      width: min(92vw, 840px);
-      max-height: min(86vh, 720px);
-      overflow: auto;
-      background: var(--panel);
-      border-radius: 16px;
-      padding: 18px 18px 14px 18px;
-      box-shadow: var(--shadow);
-    }
-    #game-root .dialog h2 { margin: 0 0 8px; font-size: clamp(1.1rem, 2.4vw, 1.5rem); }
-    #game-root .dialog p { margin: 6px 0 0; font-size: clamp(.95rem, 2vw, 1.05rem); }
-    #game-root .dialog .sources {
-      margin-top: 10px;
-      font-size: .95rem;
-      color: var(--ink-soft);
-    }
-    #game-root .dialog .actions {
-      display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px;
-    }
-    #game-root .close-x {
-      position: absolute;
-      top: 8px; right: 8px;
-      width: 36px; height: 36px;
-      border-radius: 10px;
-      border: 0;
-      background: #fff;
-      cursor: pointer;
-      box-shadow: var(--shadow);
-      font-size: 20px;
-      line-height: 1;
-    }
-
-    /* ===========
-       ÁREA: Pantalla final
-       =========== */
-    #game-root .panel h2 { margin: 0 0 8px; font-size: clamp(1.2rem, 2.8vw, 1.8rem); }
-    #game-root .panel p { margin: 10px 0 16px; }
-
-    /* ===========
-       ÁREA: Controles táctiles
-       =========== */
-    #game-root .touch-ui {
-      position: absolute;
-      inset: auto 12px 12px 12px;
-      display: flex;
-      align-items: flex-end;
-      gap: 12px;
-      z-index: 40;
-      pointer-events: none; /* el contenedor no capta eventos */
-    }
-    /* Joystick */
-    #game-root .joystick {
-      pointer-events: auto; /* sí capta eventos */
-      position: relative;
-      width: 112px; height: 112px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.55);
-      backdrop-filter: blur(6px);
-      box-shadow: var(--shadow);
-      touch-action: none;
-    }
-    #game-root .joystick .stick {
-      position: absolute;
-      left: 50%; top: 50%;
-      width: 56px; height: 56px;
-      transform: translate(-50%,-50%);
-      border-radius: 50%;
-      background: rgba(255,255,255,.95);
-      border: 2px solid rgba(0,0,0,.08);
-      box-shadow: var(--shadow);
-    }
-    /* Botones flecha */
-    #game-root .dpad {
-      pointer-events: auto;
-      display: grid;
-      grid-template:
-        " . up  . " 40px
-        "left . right" 40px
-        " . down . " 40px / 40px 40px 40px;
-      gap: 6px;
-      background: rgba(255,255,255,.55);
-      padding: 8px;
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-    }
-    #game-root .dpad button {
-      width: 40px; height: 40px;
-      border-radius: 10px;
-      border: 0;
-      background: rgba(255,255,255,.95);
-      font-weight: 900;
-      box-shadow: var(--shadow);
-      cursor: pointer;
-    }
-    #game-root .dpad .up   { grid-area: up; }
-    #game-root .dpad .down { grid-area: down; }
-    #game-root .dpad .left { grid-area: left; }
-    #game-root .dpad .right{ grid-area: right; }
-
-    /* Ocultar controles táctiles en pantallas grandes si hay teclado */
-    @media (min-width: 900px) {
-      #game-root .touch-ui { opacity: .85; }
-    }
+    @media (min-width:900px){.touch-ui{opacity:.85;}}
   </style>
 </head>
 <body>
-  <!--
-    Juego: Caza‑bulos ambientales
-    - 10 mariposas moviéndose.
-    - Protagonista con cazamariposas (teclado y joystick táctil).
-    - Al capturar: modal con el bulo y la aclaración. Se incrementa contador.
-    - Al cerrar el modal: la mariposa ya no vuelve. Al llegar a 10: pantalla final.
-  -->
   <div id="game-root" tabindex="0" aria-label="Juego caza-bulos ambientales" role="application">
     <div class="game-area" id="gameArea" aria-label="Área de juego">
-      <!-- HUD -->
       <div class="hud" aria-live="polite">
         <div class="counter">Bulos vistos: <span id="seenCount">0</span>/10</div>
         <button class="btn" id="btnRestart" aria-label="Reiniciar partida">Reiniciar</button>
@@ -258,43 +64,33 @@
 
       <!-- Protagonista -->
       <div class="player" id="player" role="img" aria-label="Protagonista con cazamariposas">
-        <!-- SVG simple del personaje con red -->
-        <svg viewBox="0 0 56 56" aria-hidden="true">
-          <!-- cuerpo -->
+        <svg id="playerSprite" viewBox="0 0 56 56" aria-hidden="true">
           <circle cx="20" cy="14" r="8" fill="#ffd38e" />
           <rect x="12" y="22" width="16" height="18" rx="6" fill="#2563eb"/>
           <rect x="10" y="40" width="10" height="12" rx="3" fill="#0ea5e9"/>
           <rect x="20" y="40" width="10" height="12" rx="3" fill="#0ea5e9"/>
-          <!-- brazo + red -->
           <g class="arm">
             <rect x="24" y="24" width="18" height="6" rx="3" fill="#ffd38e"/>
-            <!-- mango -->
             <rect x="38" y="18" width="3" height="20" rx="1.5" fill="#8b5e3c"/>
-            <!-- aro de red -->
             <ellipse cx="45" cy="14" rx="9" ry="7" fill="#fff" stroke="#7aa2c8" stroke-width="2"/>
             <ellipse cx="45" cy="14" rx="7" ry="5" fill="none" stroke="#7aa2c8" stroke-width="1.2" stroke-dasharray="2 2"/>
           </g>
         </svg>
       </div>
 
-      <!-- Contenedor de mariposas -->
       <div id="butterflies" aria-label="Mariposas"></div>
 
-      <!-- Controles táctiles -->
       <div class="touch-ui" aria-hidden="false">
-        <div class="joystick" id="joystick" aria-label="Joystick táctil">
-          <div class="stick" id="stick"></div>
-        </div>
+        <div class="joystick" id="joystick" aria-label="Joystick táctil"><div class="stick" id="stick"></div></div>
         <div class="dpad" aria-label="Botones flecha táctiles">
-          <button class="up"    data-dir="up"    aria-label="Arriba">▲</button>
-          <button class="left"  data-dir="left"  aria-label="Izquierda">◀</button>
+          <button class="up" data-dir="up" aria-label="Arriba">▲</button>
+          <button class="left" data-dir="left" aria-label="Izquierda">◀</button>
           <button class="right" data-dir="right" aria-label="Derecha">▶</button>
-          <button class="down"  data-dir="down"  aria-label="Abajo">▼</button>
+          <button class="down" data-dir="down" aria-label="Abajo">▼</button>
         </div>
       </div>
     </div>
 
-    <!-- Modal de bulo -->
     <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="overlay" id="overlay" tabindex="-1"></div>
       <div class="dialog" role="document">
@@ -302,13 +98,10 @@
         <h2 id="modalTitle">Título</h2>
         <p id="modalText">Texto</p>
         <p class="sources" id="modalSources"><strong>Fuentes:</strong> —</p>
-        <div class="actions">
-          <button class="btn secondary" id="modalOk" autofocus>Cerrar (Esc)</button>
-        </div>
+        <div class="actions"><button class="btn secondary" id="modalOk" autofocus>Cerrar (Esc)</button></div>
       </div>
     </div>
 
-    <!-- Pantalla final -->
     <div class="end-screen hidden" id="endScreen" role="dialog" aria-modal="true" aria-labelledby="endTitle">
       <div class="overlay"></div>
       <div class="panel">
@@ -320,488 +113,220 @@
   </div>
 
   <script>
-    // ===========================
-    // DATOS: Bulos ambientales
-    // ===========================
+    // ----- Datos -----
     const BULOS = [
-      {
-        id: 1,
-        titulo: "El clima siempre ha cambiado — esto no es diferente",
-        texto: "Aunque el clima de la Tierra ha variado en el pasado, el ritmo actual de calentamiento es mucho más rápido que cualquier variación natural en millones de años.",
-        fuentes: ["Covering Climate Now", "#ThinkLandscape", "Covering Climate Now"]
-      },
-      {
-        id: 2,
-        titulo: "Está haciendo frío hoy, ¿cómo puede haber calentamiento global?",
-        texto: "Esta confusión surge de mezclar clima (corto plazo, local) con tiempo atmosférico. Aunque haya días fríos, la tendencia global sigue siendo de aumento de temperatura.",
-        fuentes: ["UNEP - UN Environment Programme", "Greenpeace"]
-      },
-      {
-        id: 3,
-        titulo: "Los científicos no están de acuerdo sobre el cambio climático",
-        texto: "La evidencia científica es clara: más del 97–99 % de los estudios revisados concluyen que el cambio climático es consecuencia de la actividad humana.",
-        fuentes: ["#ThinkLandscape"]
-      },
-      {
-        id: 4,
-        titulo: "El CO₂ es necesario para las plantas, no puede ser dañino",
-        texto: "Es cierto que las plantas necesitan CO₂, pero la cantidad adicional liberada hoy en día sobrepasa la capacidad de absorción natural, especialmente con la deforestación.",
-        fuentes: ["National Grid"]
-      },
-      {
-        id: 5,
-        titulo: "No ha calentado desde 1998 (o hubo una pausa)",
-        texto: "Durante 1998–2012 se observó una moderación en el aumento de temperatura superficial en algunos registros, pero estudios posteriores demuestran que ese aparente 'hiato' fue artefacto de variabilidad natural y datos incompletos — incluso el sistema climático siguió acumulando calor.",
-        fuentes: ["Wikipedia"]
-      },
-      {
-        id: 6,
-        titulo: "Se avecina una nueva era de hielo (fue predicha en los años 70)",
-        texto: "Sí hubo algunos estudios que especularon sobre enfriamiento, pero la gran mayoría ya vaticinaba calentamiento, y los modelos actuales han demostrado ser bastante fiables.",
-        fuentes: ["#ThinkLandscape"]
-      },
-      {
-        id: 7,
-        titulo: "Antártida está ganando hielo, no perdiendo",
-        texto: "Aunque algunas partes (como la Antártida oriental) acumulan más nieve, en conjunto el continente pierde más masa por fusión en otras zonas, contribuyendo al aumento del nivel del mar.",
-        fuentes: ["#ThinkLandscape"]
-      },
-      {
-        id: 8,
-        titulo: "El Sol es el culpable del calentamiento, no los humanos",
-        texto: "Las observaciones muestran que la radiación solar y la temperatura global han divergido en las últimas tres décadas, mientras los gases de efecto invernadero sí muestran correlación directa con el calentamiento.",
-        fuentes: ["Skeptical Science"]
-      },
-      {
-        id: 9,
-        titulo: "El gráfico 'hockey stick' es falso / los registros de temperatura son dudosos",
-        texto: "Muchos argumentos atacan la validez de los registros históricos, pero las series de temperatura, incluso desde zonas rurales o con termómetros tradicionales, confirman la tendencia al alza, y los estudios que critican el 'hockey stick' carecen de respaldo robusto.",
-        fuentes: ["Skeptical Science"]
-      },
-      {
-        id: 10,
-        titulo: "Radioactividad, rayos cósmicos o procesos naturales explican todo",
-        texto: "Argumentos que desvían el foco científico hacia procesos como rayos cósmicos o efectos naturales han sido desmentidos: no hay correlación significativa con el calentamiento actual, mientras el CO₂ antropogénico sí es el principal factor.",
-        fuentes: []
-      }
+      { id:1, titulo:"El clima siempre ha cambiado — esto no es diferente", texto:"Aunque el clima de la Tierra ha variado en el pasado, el ritmo actual de calentamiento es mucho más rápido que cualquier variación natural en millones de años.", fuentes:["Covering Climate Now","#ThinkLandscape","Covering Climate Now"] },
+      { id:2, titulo:"Está haciendo frío hoy, ¿cómo puede haber calentamiento global?", texto:"Esta confusión surge de mezclar clima (corto plazo, local) con tiempo atmosférico. Aunque haya días fríos, la tendencia global sigue siendo de aumento de temperatura.", fuentes:["UNEP - UN Environment Programme","Greenpeace"] },
+      { id:3, titulo:"Los científicos no están de acuerdo sobre el cambio climático", texto:"La evidencia científica es clara: más del 97–99 % de los estudios revisados concluyen que el cambio climático es consecuencia de la actividad humana.", fuentes:["#ThinkLandscape"] },
+      { id:4, titulo:"El CO₂ es necesario para las plantas, no puede ser dañino", texto:"Es cierto que las plantas necesitan CO₂, pero la cantidad adicional liberada hoy en día sobrepasa la capacidad de absorción natural, especialmente con la deforestación.", fuentes:["National Grid"] },
+      { id:5, titulo:"No ha calentado desde 1998 (o hubo una pausa)", texto:"Durante 1998–2012 se observó una moderación en el aumento de temperatura superficial en algunos registros, pero estudios posteriores demuestran que ese aparente 'hiato' fue artefacto de variabilidad natural y datos incompletos — incluso el sistema climático siguió acumulando calor.", fuentes:["Wikipedia"] },
+      { id:6, titulo:"Se avecina una nueva era de hielo (fue predicha en los años 70)", texto:"Sí hubo algunos estudios que especularon sobre enfriamiento, pero la gran mayoría ya vaticinaba calentamiento, y los modelos actuales han demostrado ser bastante fiables.", fuentes:["#ThinkLandscape"] },
+      { id:7, titulo:"Antártida está ganando hielo, no perdiendo", texto:"Aunque algunas partes (como la Antártida oriental) acumulan más nieve, en conjunto el continente pierde más masa por fusión en otras zonas, contribuyendo al aumento del nivel del mar.", fuentes:["#ThinkLandscape"] },
+      { id:8, titulo:"El Sol es el culpable del calentamiento, no los humanos", texto:"Las observaciones muestran que la radiación solar y la temperatura global han divergido en las últimas tres décadas, mientras los gases de efecto invernadero sí muestran correlación directa con el calentamiento.", fuentes:["Skeptical Science"] },
+      { id:9, titulo:"El gráfico 'hockey stick' es falso / los registros de temperatura son dudosos", texto:"Muchos argumentos atacan la validez de los registros históricos, pero las series de temperatura, incluso desde zonas rurales o con termómetros tradicionales, confirman la tendencia al alza, y los estudios que critican el 'hockey stick' carecen de respaldo robusto.", fuentes:["Skeptical Science"] },
+      { id:10, titulo:"Radioactividad, rayos cósmicos o procesos naturales explican todo", texto:"Argumentos que desvían el foco científico hacia procesos como rayos cósmicos o efectos naturales han sido desmentidos: no hay correlación significativa con el calentamiento actual, mientras el CO₂ antropogénico sí es el principal factor.", fuentes:[] }
     ];
 
-    // ===========================
-    // Utilidades
-    // ===========================
-    const $ = (q, el = document) => el.querySelector(q);
-    const $$ = (q, el = document) => Array.from(el.querySelectorAll(q));
+    // ----- Utilidades -----
+    const $ = (q, el=document) => el.querySelector(q);
+    const $$ = (q, el=document) => Array.from(el.querySelectorAll(q));
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
     const rand = (min, max) => Math.random() * (max - min) + min;
-    const choice = arr => arr[Math.floor(Math.random() * arr.length)];
+    const dist2 = (x1,y1,x2,y2)=>{const dx=x2-x1,dy=y2-y1;return dx*dx+dy*dy;};
+    function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
 
-    // ===========================
-    // Elementos principales
-    // ===========================
-    const root = document.getElementById('game-root');
-    const area = document.getElementById('gameArea');
-    const playerEl = document.getElementById('player');
-    const butterfliesEl = document.getElementById('butterflies');
-    const seenCountEl = document.getElementById('seenCount');
-    const btnRestart = document.getElementById('btnRestart');
+    // ----- Elementos -----
+    const root = $('#game-root');
+    const area = $('#gameArea');
+    const playerEl = $('#player');
+    const playerSprite = $('#playerSprite'); // <- flip solo en el SVG
+    const butterfliesEl = $('#butterflies');
+    const seenCountEl = $('#seenCount');
+    const btnRestart = $('#btnRestart');
 
-    // Modal
-    const modal = document.getElementById('modal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalText = document.getElementById('modalText');
-    const modalSources = document.getElementById('modalSources');
-    const modalOk = document.getElementById('modalOk');
-    const closeX = document.getElementById('closeX');
-    const overlay = document.getElementById('overlay');
-
-    // Fin
-    const endScreen = document.getElementById('endScreen');
-    const playAgain = document.getElementById('playAgain');
-
-    // Controles táctiles
-    const joystick = document.getElementById('joystick');
-    const stick = document.getElementById('stick');
+    const modal = $('#modal'), modalTitle = $('#modalTitle'), modalText = $('#modalText'),
+          modalSources = $('#modalSources'), modalOk = $('#modalOk'), closeX = $('#closeX'), overlay = $('#overlay');
+    const endScreen = $('#endScreen'), playAgain = $('#playAgain');
+    const joystick = $('#joystick'), stick = $('#stick');
     const dpadButtons = $$('.dpad button');
 
-    // ===========================
-    // Estado de juego
-    // ===========================
+    // ----- Estado -----
     const STATE = {
-      w: 0, h: 0,
-      running: true,
-      lastT: 0,
-      speed: 260, // px/s jugador
-      player: { x: 200, y: 200, r: 24 },
-      keys: { up:false, down:false, left:false, right:false },
-      joy: { active:false, dx:0, dy:0, baseX:0, baseY:0, max:40 },
-      butterflies: [],
-      mapping: [], // mapeo mariposa -> índice de BULOS
-      seenIds: new Set(),
-      total: BULOS.length
+      w:0, h:0, running:true, lastT:0, speed:260,
+      player:{ x:200, y:200, r:24 },
+      keys:{ up:false, down:false, left:false, right:false },
+      joy:{ active:false, dx:0, dy:0, baseX:0, baseY:0, max:40 },
+      butterflies:[], mapping:[], seenIds:new Set(), total:BULOS.length,
+      facing:'right' // 'right' | 'left'
     };
 
-    function resize() {
+    function resize(){
       const rect = area.getBoundingClientRect();
-      STATE.w = rect.width;
-      STATE.h = rect.height;
-      // Evitar que el jugador se quede fuera
+      STATE.w = rect.width; STATE.h = rect.height;
       STATE.player.x = clamp(STATE.player.x, STATE.player.r, STATE.w - STATE.player.r);
       STATE.player.y = clamp(STATE.player.y, STATE.player.r, STATE.h - STATE.player.r);
     }
-    window.addEventListener('resize', resize, { passive: true });
+    addEventListener('resize', resize, { passive:true });
 
-    // ===========================
-    // Construcción de mariposas
-    // ===========================
-    function createButterflyElement(h, s = 70, l = 55) {
-      const div = document.createElement('div');
-      div.className = 'butterfly';
-      div.setAttribute('role', 'img');
-      div.setAttribute('aria-label', 'Mariposa');
-      const color = `hsl(${h} ${s}% ${l}%)`;
-      div.innerHTML = `
+    // ----- Mariposas -----
+    function createButterflyElement(h, s=70, l=55){
+      const div = document.createElement('div'); div.className='butterfly'; div.setAttribute('role','img'); div.setAttribute('aria-label','Mariposa');
+      const color=`hsl(${h} ${s}% ${l}%)`;
+      div.innerHTML=`
         <svg viewBox="0 0 120 90" aria-hidden="true">
-          <!-- cuerpo -->
-          <rect x="55" y="35" width="10" height="20" rx="5" fill="#333"/>
-          <circle cx="60" cy="32" r="6" fill="#333"/>
-          <!-- alas -->
-          <g class="wL">
-            <path d="M60,40 C30,20 18,10 14,26 C10,42 28,55 44,58 C50,59 54,58 58,52 Z" fill="${color}" opacity="0.95"/>
-          </g>
-          <g class="wR">
-            <path d="M60,40 C90,20 102,10 106,26 C110,42 92,55 76,58 C70,59 66,58 62,52 Z" fill="${color}" opacity="0.95"/>
-          </g>
-          <!-- detalles -->
-          <circle cx="45" cy="50" r="5" fill="rgba(255,255,255,.65)"/>
-          <circle cx="75" cy="50" r="5" fill="rgba(255,255,255,.65)"/>
-        </svg>
-      `;
+          <rect x="55" y="35" width="10" height="20" rx="5" fill="#333"/><circle cx="60" cy="32" r="6" fill="#333"/>
+          <g class="wL"><path d="M60,40 C30,20 18,10 14,26 C10,42 28,55 44,58 C50,59 54,58 58,52 Z" fill="${color}" opacity="0.95"/></g>
+          <g class="wR"><path d="M60,40 C90,20 102,10 106,26 C110,42 92,55 76,58 C70,59 66,58 62,52 Z" fill="${color}" opacity="0.95"/></g>
+          <circle cx="45" cy="50" r="5" fill="rgba(255,255,255,.65)"/><circle cx="75" cy="50" r="5" fill="rgba(255,255,255,.65)"/>
+        </svg>`;
       return div;
     }
 
-    function spawnButterflies() {
-      butterfliesEl.innerHTML = '';
-      STATE.butterflies = [];
-      STATE.mapping = shuffle([...Array(BULOS.length).keys()]);
-      const margin = 50;
-      const placed = [];
-
-      for (let i = 0; i < BULOS.length; i++) {
-        const hue = Math.round((360 / BULOS.length) * i + rand(-10,10));
-        const el = createButterflyElement(hue);
-        butterfliesEl.appendChild(el);
-
-        const b = {
-          id: i,
-          x: 0, y: 0,
-          vx: rand(-70, 70),
-          vy: rand(-70, 70),
-          r: 18,
-          el
-        };
-
-        // posición inicial no solapada
-        let attempts = 0;
-        do {
-          b.x = rand(margin, STATE.w - margin);
-          b.y = rand(margin, STATE.h - margin);
-          attempts++;
-          if (attempts > 500) break;
-        } while (placed.some(p => dist2(p.x, p.y, b.x, b.y) < (p.r + b.r + 26) ** 2));
-
-        placed.push({ x: b.x, y: b.y, r: b.r });
-        STATE.butterflies.push(b);
-        setPos(el, b.x, b.y);
+    function spawnButterflies(){
+      butterfliesEl.innerHTML=''; STATE.butterflies=[]; STATE.mapping = shuffle([...Array(BULOS.length).keys()]);
+      const margin=50, placed=[];
+      for(let i=0;i<BULOS.length;i++){
+        const hue=Math.round((360/BULOS.length)*i + rand(-10,10));
+        const el=createButterflyElement(hue); butterfliesEl.appendChild(el);
+        const b={ id:i, x:0, y:0, vx:rand(-70,70), vy:rand(-70,70), r:18, el };
+        let tries=0;
+        do{ b.x=rand(margin, STATE.w-margin); b.y=rand(margin, STATE.h-margin); tries++; if(tries>500) break; }
+        while(placed.some(p=>dist2(p.x,p.y,b.x,b.y)<(p.r+b.r+26)**2));
+        placed.push({x:b.x,y:b.y,r:b.r}); STATE.butterflies.push(b); setPos(b.el,b.x,b.y);
       }
     }
 
-    function shuffle(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
+    // ----- Movimiento -----
+    function setPos(el,x,y){ el.style.transform = `translate(${x}px, ${y}px) translate(-50%,-50%)`; }
+    function updateFacing(){ if(!playerSprite) return; playerSprite.style.transformOrigin='50% 50%'; playerSprite.style.transform = (STATE.facing==='left') ? 'scaleX(-1)' : 'scaleX(1)'; }
 
-    // ===========================
-    // Movimiento y colisiones
-    // ===========================
-    function setPos(el, x, y) {
-      el.style.transform = `translate(${x}px, ${y}px) translate(-50%,-50%)`;
-    }
-    function dist2(x1,y1,x2,y2){ const dx=x2-x1, dy=y2-y1; return dx*dx+dy*dy; }
+    function update(dt){
+      if(!STATE.running) return;
+      let dx=(STATE.keys.right?1:0)-(STATE.keys.left?1:0);
+      let dy=(STATE.keys.down?1:0)-(STATE.keys.up?1:0);
+      if(STATE.joy.active){ dx+=STATE.joy.dx; dy+=STATE.joy.dy; }
 
-    function update(dt) {
-      if (!STATE.running) return;
+      // Orientación solo por componente horizontal
+      if(dx<-0.01) STATE.facing='left'; else if(dx>0.01) STATE.facing='right';
+      updateFacing();
 
-      // Dirección por teclado/joystick
-      let dx = (STATE.keys.right?1:0) - (STATE.keys.left?1:0);
-      let dy = (STATE.keys.down?1:0) - (STATE.keys.up?1:0);
-
-      // Mezclar joystick (táctil) si está activo
-      if (STATE.joy.active) {
-        dx += STATE.joy.dx;
-        dy += STATE.joy.dy;
-      }
-
-      // Normalizar
-      if (dx !== 0 || dy !== 0) {
-        const len = Math.hypot(dx, dy);
-        dx /= len; dy /= len;
-        STATE.player.x = clamp(STATE.player.x + dx * STATE.speed * dt, STATE.player.r, STATE.w - STATE.player.r);
-        STATE.player.y = clamp(STATE.player.y + dy * STATE.speed * dt, STATE.player.r, STATE.h - STATE.player.r);
+      if(dx!==0 || dy!==0){
+        const len=Math.hypot(dx,dy); dx/=len; dy/=len;
+        STATE.player.x = clamp(STATE.player.x + dx*STATE.speed*dt, STATE.player.r, STATE.w-STATE.player.r);
+        STATE.player.y = clamp(STATE.player.y + dy*STATE.speed*dt, STATE.player.r, STATE.h-STATE.player.r);
       }
       setPos(playerEl, STATE.player.x, STATE.player.y);
 
-      // Mariposas
-      for (const b of STATE.butterflies) {
-        b.x += b.vx * dt;
-        b.y += b.vy * dt;
-
-        // rebote contra bordes
-        if (b.x < b.r) { b.x = b.r; b.vx *= -1; }
-        if (b.x > STATE.w - b.r) { b.x = STATE.w - b.r; b.vx *= -1; }
-        if (b.y < b.r) { b.y = b.r; b.vy *= -1; }
-        if (b.y > STATE.h - b.r) { b.y = STATE.h - b.r; b.vy *= -1; }
-
-        setPos(b.el, b.x, b.y);
+      for(const b of STATE.butterflies){
+        b.x+=b.vx*dt; b.y+=b.vy*dt;
+        if(b.x<b.r){b.x=b.r; b.vx*=-1;} if(b.x>STATE.w-b.r){b.x=STATE.w-b.r; b.vx*=-1;}
+        if(b.y<b.r){b.y=b.r; b.vy*=-1;} if(b.y>STATE.h-b.r){b.y=STATE.h-b.r; b.vy*=-1;}
+        setPos(b.el,b.x,b.y);
       }
 
-      // Colisiones con jugador
-      const pr = STATE.player.r;
-      for (const b of [...STATE.butterflies]) {
-        const rsum = pr + b.r;
-        if (dist2(STATE.player.x, STATE.player.y, b.x, b.y) <= rsum * rsum) {
-          // capturar
-          captureButterfly(b);
-        }
+      const pr=STATE.player.r;
+      for(const b of [...STATE.butterflies]){
+        const rsum=pr+b.r;
+        if(dist2(STATE.player.x,STATE.player.y,b.x,b.y)<=rsum*rsum){ captureButterfly(b); }
       }
     }
 
-    function loop(t) {
-      const now = t * 0.001;
-      const dt = Math.min(0.033, now - (STATE.lastT || now));
-      STATE.lastT = now;
-      update(dt);
-      requestAnimationFrame(loop);
-    }
+    function loop(t){ const now=t*0.001, dt=Math.min(0.033, now-(STATE.lastT||now)); STATE.lastT=now; update(dt); requestAnimationFrame(loop); }
 
-    // ===========================
-    // Captura y modal
-    // ===========================
-    function captureButterfly(b) {
-      // Evitar doble captura
-      if (!STATE.butterflies.includes(b)) return;
-
-      // Asociar bulo por índice mapeado
-      const buloIndex = STATE.mapping[b.id];
-      const data = BULOS[buloIndex];
-      if (STATE.seenIds.has(data.id)) return; // ya contado (seguro si se retiró el elemento)
-
-      // Eliminar del array y del DOM
-      STATE.butterflies = STATE.butterflies.filter(x => x !== b);
-      b.el.remove();
-
-      // Marcar visto + contador
-      STATE.seenIds.add(data.id);
-      seenCountEl.textContent = STATE.seenIds.size.toString();
-
-      // Mostrar modal con el contenido
+    // ----- Captura / modal -----
+    function captureButterfly(b){
+      if(!STATE.butterflies.includes(b)) return;
+      const data = BULOS[ STATE.mapping[b.id] ];
+      if(STATE.seenIds.has(data.id)) return;
+      STATE.butterflies = STATE.butterflies.filter(x=>x!==b); b.el.remove();
+      STATE.seenIds.add(data.id); $('#seenCount').textContent = STATE.seenIds.size.toString();
       openModal(data);
-
-      // Si ya están todos, el fin se muestra al cerrar el modal (para que se lea el último)
     }
-
-    function openModal(data) {
-      STATE.running = false;
-      modalTitle.textContent = data.titulo;
-      modalText.textContent = data.texto;
-      if (data.fuentes && data.fuentes.length) {
-        modalSources.innerHTML = '<strong>Fuentes:</strong> ' + data.fuentes.join(', ');
-      } else {
-        modalSources.innerHTML = '<strong>Fuentes:</strong> —';
-      }
-      modal.classList.remove('hidden');
-
-      // Gestión de foco accesible
-      setTimeout(() => modalOk.focus(), 0);
+    function openModal(data){
+      STATE.running=false; modalTitle.textContent=data.titulo; modalText.textContent=data.texto;
+      modalSources.innerHTML = (data.fuentes && data.fuentes.length) ? '<strong>Fuentes:</strong> '+data.fuentes.join(', ') : '<strong>Fuentes:</strong> —';
+      modal.classList.remove('hidden'); setTimeout(()=>modalOk.focus(),0);
     }
-
-    function closeModal() {
-      if (modal.classList.contains('hidden')) return;
+    function closeModal(){
+      if(modal.classList.contains('hidden')) return;
       modal.classList.add('hidden');
-      // Si ya están todos, mostrar fin
-      if (STATE.seenIds.size >= STATE.total) {
-        showEnd();
-      } else {
-        STATE.running = true;
-        root.focus();
-      }
+      if(STATE.seenIds.size>=STATE.total){ showEnd(); } else { STATE.running=true; root.focus(); }
+    }
+    function showEnd(){ endScreen.classList.remove('hidden'); setTimeout(()=>playAgain.focus(),0); }
+    function hideEnd(){ endScreen.classList.add('hidden'); root.focus(); }
+
+    // ----- Reinicio -----
+    function resetGame(){
+      STATE.seenIds.clear(); $('#seenCount').textContent='0'; STATE.running=true;
+      STATE.player.x=STATE.w*0.5; STATE.player.y=STATE.h*0.62; STATE.facing='right'; updateFacing();
+      spawnButterflies(); hideEnd(); root.focus();
     }
 
-    function showEnd() {
-      endScreen.classList.remove('hidden');
-      setTimeout(() => playAgain.focus(), 0);
-    }
-    function hideEnd() {
-      endScreen.classList.add('hidden');
-      root.focus();
-    }
-
-    // ===========================
-    // Reinicio
-    // ===========================
-    function resetGame() {
-      STATE.seenIds.clear();
-      seenCountEl.textContent = '0';
-      STATE.running = true;
-      STATE.player.x = STATE.w * 0.5;
-      STATE.player.y = STATE.h * 0.62;
-      spawnButterflies();
-      hideEnd();
-      root.focus();
-    }
-
-    // ===========================
-    // Eventos: teclado
-    // ===========================
-    function setKey(e, isDown) {
-      switch (e.key) {
-        case 'ArrowUp': case 'w': case 'W': STATE.keys.up = isDown; break;
-        case 'ArrowDown': case 's': case 'S': STATE.keys.down = isDown; break;
-        case 'ArrowLeft': case 'a': case 'A': STATE.keys.left = isDown; break;
-        case 'ArrowRight': case 'd': case 'D': STATE.keys.right = isDown; break;
+    // ----- Eventos teclado -----
+    function setKey(e,isDown){
+      switch(e.key){
+        case 'ArrowUp': case 'w': case 'W': STATE.keys.up=isDown; break;
+        case 'ArrowDown': case 's': case 'S': STATE.keys.down=isDown; break;
+        case 'ArrowLeft': case 'a': case 'A': STATE.keys.left=isDown; break;
+        case 'ArrowRight': case 'd': case 'D': STATE.keys.right=isDown; break;
         case 'Escape':
-          if (!modal.classList.contains('hidden')) { closeModal(); }
-          else if (!endScreen.classList.contains('hidden')) { resetGame(); }
+          if(!modal.classList.contains('hidden')) closeModal();
+          else if(!endScreen.classList.contains('hidden')) resetGame();
           break;
       }
     }
-    root.addEventListener('keydown', (e) => {
-      // evitar scroll con flechas
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
-      setKey(e, true);
-    });
-    root.addEventListener('keyup', (e) => setKey(e, false));
+    root.addEventListener('keydown', e=>{ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault(); setKey(e,true); });
+    root.addEventListener('keyup', e=>setKey(e,false));
 
-    // ===========================
-    // Eventos: modal
-    // ===========================
-    overlay.addEventListener('click', closeModal);
-    modalOk.addEventListener('click', closeModal);
-    closeX.addEventListener('click', closeModal);
-
-    // Trampa básica de foco en modal (dos elementos)
-    modal.addEventListener('keydown', (e) => {
-      if (e.key === 'Tab') {
-        const foci = [closeX, modalOk];
-        const i = foci.indexOf(document.activeElement);
-        let ni = e.shiftKey ? (i <= 0 ? foci.length - 1 : i - 1) : (i >= foci.length - 1 ? 0 : i + 1);
-        foci[ni].focus();
-        e.preventDefault();
-      }
+    // ----- Modal -----
+    overlay.addEventListener('click', closeModal); modalOk.addEventListener('click', closeModal); closeX.addEventListener('click', closeModal);
+    modal.addEventListener('keydown', e=>{
+      if(e.key==='Tab'){ const f=[closeX,modalOk]; const i=f.indexOf(document.activeElement); const ni=e.shiftKey?(i<=0?f.length-1:i-1):(i>=f.length-1?0:i+1); f[ni].focus(); e.preventDefault(); }
     });
 
-    // ===========================
-    // Eventos: botones UI
-    // ===========================
+    // ----- Botones UI -----
     btnRestart.addEventListener('click', resetGame);
     playAgain.addEventListener('click', resetGame);
 
-    // ===========================
-    // Controles táctiles: joystick
-    // ===========================
-    function joyStart(ev) {
-      ev.preventDefault();
-      STATE.joy.active = true;
-      const r = joystick.getBoundingClientRect();
-      STATE.joy.baseX = r.left + r.width / 2;
-      STATE.joy.baseY = r.top + r.height / 2;
-      joyMove(ev);
-    }
-    function joyMove(ev) {
-      if (!STATE.joy.active) return;
-      const p = getPoint(ev);
-      const dx = p.x - STATE.joy.baseX;
-      const dy = p.y - STATE.joy.baseY;
-      const len = Math.hypot(dx, dy);
-      const max = STATE.joy.max;
-      const k = len > max ? (max / len) : 1;
-      const sx = dx * k, sy = dy * k;
-      stick.style.transform = `translate(${sx}px, ${sy}px) translate(-50%,-50%)`;
-      // vector normalizado para movimiento
-      STATE.joy.dx = (len < 6) ? 0 : (dx / (max));
-      STATE.joy.dy = (len < 6) ? 0 : (dy / (max));
-    }
-    function joyEnd() {
-      STATE.joy.active = false;
-      STATE.joy.dx = 0; STATE.joy.dy = 0;
-      stick.style.transform = `translate(-50%,-50%)`;
-    }
-    function getPoint(ev) {
-      if (ev.touches && ev.touches[0]) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
-      return { x: ev.clientX, y: ev.clientY };
-    }
+    // ----- Táctil -----
+    function joyStart(ev){ ev.preventDefault(); STATE.joy.active=true; const r=joystick.getBoundingClientRect(); STATE.joy.baseX=r.left+r.width/2; STATE.joy.baseY=r.top+r.height/2; joyMove(ev); }
+    function joyMove(ev){ if(!STATE.joy.active) return; const p=getPoint(ev); const dx=p.x-STATE.joy.baseX, dy=p.y-STATE.joy.baseY; const len=Math.hypot(dx,dy), max=STATE.joy.max, k=len>max?(max/len):1; const sx=dx*k, sy=dy*k; stick.style.transform=`translate(${sx}px, ${sy}px) translate(-50%,-50%)`; STATE.joy.dx=(len<6)?0:(dx/max); STATE.joy.dy=(len<6)?0:(dy/max); }
+    function joyEnd(){ STATE.joy.active=false; STATE.joy.dx=0; STATE.joy.dy=0; stick.style.transform='translate(-50%,-50%)'; }
+    function getPoint(ev){ if(ev.touches&&ev.touches[0]) return {x:ev.touches[0].clientX,y:ev.touches[0].clientY}; return {x:ev.clientX,y:ev.clientY}; }
     joystick.addEventListener('pointerdown', joyStart);
-    window.addEventListener('pointermove', joyMove);
-    window.addEventListener('pointerup', joyEnd);
-    joystick.addEventListener('touchstart', joyStart, { passive: false });
-    window.addEventListener('touchmove', joyMove, { passive: false });
-    window.addEventListener('touchend', joyEnd);
+    addEventListener('pointermove', joyMove); addEventListener('pointerup', joyEnd);
+    joystick.addEventListener('touchstart', joyStart, { passive:false });
+    addEventListener('touchmove', joyMove, { passive:false }); addEventListener('touchend', joyEnd);
 
-    // Botones flecha táctiles (mantener mientras se pulse)
-    const touchState = new Map(); // btn -> interval
-    function dpadPress(dir, down) {
-      if (down) {
-        if (dir==='up') STATE.keys.up = true;
-        if (dir==='down') STATE.keys.down = true;
-        if (dir==='left') STATE.keys.left = true;
-        if (dir==='right') STATE.keys.right = true;
-      } else {
-        if (dir==='up') STATE.keys.up = false;
-        if (dir==='down') STATE.keys.down = false;
-        if (dir==='left') STATE.keys.left = false;
-        if (dir==='right') STATE.keys.right = false;
-      }
+    function dpadPress(dir,down){
+      if(down){ if(dir==='up')STATE.keys.up=true; if(dir==='down')STATE.keys.down=true; if(dir==='left')STATE.keys.left=true; if(dir==='right')STATE.keys.right=true; }
+      else    { if(dir==='up')STATE.keys.up=false; if(dir==='down')STATE.keys.down=false; if(dir==='left')STATE.keys.left=false; if(dir==='right')STATE.keys.right=false; }
     }
-    dpadButtons.forEach(btn => {
-      const dir = btn.dataset.dir;
-      const downEv = (e) => { e.preventDefault(); dpadPress(dir, true); };
-      const upEv = (e) => { e.preventDefault(); dpadPress(dir, false); };
-      btn.addEventListener('pointerdown', downEv);
-      btn.addEventListener('pointerup', upEv);
-      btn.addEventListener('pointerleave', upEv);
-      btn.addEventListener('touchstart', downEv, { passive:false });
-      btn.addEventListener('touchend', upEv);
-      btn.addEventListener('touchcancel', upEv);
+    dpadButtons.forEach(btn=>{
+      const dir=btn.dataset.dir, downEv=e=>{e.preventDefault();dpadPress(dir,true);}, upEv=e=>{e.preventDefault();dpadPress(dir,false);};
+      btn.addEventListener('pointerdown',downEv); btn.addEventListener('pointerup',upEv); btn.addEventListener('pointerleave',upEv);
+      btn.addEventListener('touchstart',downEv,{passive:false}); btn.addEventListener('touchend',upEv); btn.addEventListener('touchcancel',upEv);
     });
 
-    // ===========================
-    // Inicio
-    // ===========================
-    function init() {
+    // ----- Inicio -----
+    function init(){
       resize();
-      // posición inicial del jugador
-      STATE.player.x = STATE.w * 0.5;
-      STATE.player.y = STATE.h * 0.62;
+      // Anula fallback si hay JS: la posición se controla con transform
+      playerEl.style.left = '0px'; playerEl.style.top = '0px';
+      STATE.player.x = STATE.w*0.5; STATE.player.y = STATE.h*0.62; STATE.facing='right'; updateFacing();
       setPos(playerEl, STATE.player.x, STATE.player.y);
       spawnButterflies();
       root.focus();
       requestAnimationFrame(loop);
     }
-    document.addEventListener('DOMContentLoaded', init);
-
-    // ===========================
-    // Prueba sencilla en consola (opcional)
-    // ===========================
-    window.__selfTest = function() {
-      console.log('Test: añadir mariposa artificial y colisionar…');
-      if (!STATE.butterflies.length) return console.warn('No hay mariposas');
-      const b = STATE.butterflies[0];
-      STATE.player.x = b.x; STATE.player.y = b.y;
-      update(0.016);
-      console.log('Vistos:', STATE.seenIds.size, 'Modal abierto:', !modal.classList.contains('hidden'));
-    }
+    addEventListener('load', init);
   </script>
+
+  <noscript>
+    <div style="position:fixed; inset:0; display:grid; place-items:center; background:#001b2e; color:#fff; z-index:9999; padding:24px; text-align:center;">
+      <div><h2 style="margin:0 0 8px;">Este juego necesita JavaScript</h2>
+      <p style="opacity:.9; max-width:680px;">Si lo incrustas en un bloque HTML de WordPress.com y no se ve, usa un iframe desde un hosting externo o un método que permita ejecutar JS.</p></div>
+    </div>
+  </noscript>
 </body>
 </html>
